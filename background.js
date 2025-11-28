@@ -17,11 +17,18 @@ async function loadConfig() {
         syncDelay: 500
       };
       // 合并配置，确保即使result中没有serverAddress，也会使用默认值
+      let serverAddress = defaultConfig.serverAddress;
+      
+      // 只在result.serverAddress有效时使用
+      if (result.serverAddress && typeof result.serverAddress === 'string' && !result.serverAddress.includes('undefined')) {
+        serverAddress = result.serverAddress;
+      }
+      
       const mergedConfig = {
         ...defaultConfig,
         ...result,
-        // 再次确保serverAddress有值
-        serverAddress: result.serverAddress || defaultConfig.serverAddress
+        // 确保使用有效或默认的serverAddress
+        serverAddress: serverAddress
       };
       resolve(mergedConfig);
     });
@@ -31,7 +38,14 @@ async function loadConfig() {
 // 保存配置到Chrome存储
 async function saveConfig(config) {
   return new Promise((resolve) => {
-    chrome.storage.sync.set(config, () => {
+    // 验证并修正serverAddress
+    let serverAddress = 'http://127.0.0.1';
+    if (config.serverAddress && typeof config.serverAddress === 'string' && !config.serverAddress.includes('undefined')) {
+      serverAddress = config.serverAddress;
+    }
+    
+    // 保存有效配置
+    chrome.storage.sync.set({...config, serverAddress: serverAddress}, () => {
       resolve(true);
     });
   });
@@ -41,11 +55,30 @@ async function saveConfig(config) {
 async function callHowlApi(endpoint, data = {}, port = 4695, method = 'POST') {
   try {
     const config = await loadConfig();
-    // 确保serverAddress存在，如果不存在则使用默认值
-    const serverAddress = config.serverAddress || 'http://127.0.0.1';
+    // 确保serverAddress存在且有效，如果无效则使用默认值
+    let serverAddress = 'http://127.0.0.1';
+    
+    if (config.serverAddress && typeof config.serverAddress === 'string' && !config.serverAddress.includes('undefined')) {
+      // 去除可能存在的端口号，避免重复添加
+      const urlParts = config.serverAddress.split(':');
+      if (urlParts.length >= 2) {
+        // 检查是否是协议后的冒号
+        if (urlParts[0].includes('http')) {
+          if (urlParts.length === 3) {
+            // 格式为 http://host:port，需要移除端口
+            serverAddress = `${urlParts[0]}:${urlParts[1]}`;
+          } else {
+            serverAddress = config.serverAddress;
+          }
+        }
+      } else {
+        serverAddress = config.serverAddress;
+      }
+    }
+    
     const url = `${serverAddress}:${port}${endpoint}`;
-
-    console.log(`调用Howl API: ${url}, 方法: ${method}, 数据:`, data);
+    
+    console.log('Howl-faptap: 调用Howl API:', url, '方法:', method, '数据:', data);
 
     const headers = {
       'Content-Type': 'application/json',
@@ -65,8 +98,8 @@ async function callHowlApi(endpoint, data = {}, port = 4695, method = 'POST') {
 
     // 检查响应状态
     if (!response.ok) {
-      const errorMessage = `HTTP错误状态码: ${response.status}`;
-      console.error(errorMessage);
+      const errorMessage = `Howl-faptap: HTTP错误状态码: ${response.status}`;
+      console.log(errorMessage);
       return {
         success: false,
         error: errorMessage
@@ -85,14 +118,14 @@ async function callHowlApi(endpoint, data = {}, port = 4695, method = 'POST') {
       };
     } catch (jsonError) {
       // 处理非JSON响应
-      console.log('Howl API返回text文本响应:', text.substring(0, 100) + '...');
+      console.log('Howl-faptap: Howl API返回text文本响应:', text.substring(0, 100) + '...');
       return {
         success: true,
         data: text
       };
     }
   } catch (error) {
-    console.error('调用Howl API失败:', error);
+    console.log('Howl-faptap: 调用Howl API失败:', error);
     return {
       success: false,
       error: error.message || '未知错误'
@@ -122,7 +155,7 @@ async function loadFunscript(title, funscriptContent) {
 
     // 验证funscriptContent是否有效
     if (!finalFunscriptContent || typeof finalFunscriptContent !== 'string') {
-      console.error('无效的funscript内容');
+      console.log('Howl-faptap: 无效的funscript内容');
       return {
         success: false,
         error: '无效的funscript内容'
@@ -134,7 +167,7 @@ async function loadFunscript(title, funscriptContent) {
       funscript: finalFunscriptContent
     });
   } catch (error) {
-    console.error('加载funscript失败:', error);
+    console.log('Howl-faptap: 加载funscript失败:', error);
     return {
       success: false,
       error: error.message || '未知错误'
@@ -156,7 +189,7 @@ async function stopPlayer() {
 async function seekPlayer(position) {
   // 验证position是否为有效数字
   if (isNaN(position) || position < 0) {
-    console.error('无效的跳转位置:', position);
+    console.log('Howl-faptap: 无效的跳转位置:', position);
     return {
       success: false,
       error: '无效的跳转位置'
@@ -169,7 +202,7 @@ async function seekPlayer(position) {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const { action } = message;
 
-  console.log('收到来自content.js的消息:', action);
+  console.log('Howl-faptap: 收到来自content.js的消息:', action);
 
   // 使用异步处理所有消息
   (async () => {
@@ -212,14 +245,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
 
         default:
-          console.warn('未知的消息动作:', action);
+          console.log('Howl-faptap: 未知的消息动作:', action);
           sendResponse({
             success: false,
             error: '未知的消息动作'
           });
       }
     } catch (error) {
-      console.error('处理消息时出错:', error);
+      console.log('Howl-faptap: 处理消息时出错:', error);
       // 确保总是发送响应
       sendResponse({
         success: false,
@@ -234,5 +267,5 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // 初始化配置
 loadConfig().then(config => {
-  console.log('Howl Faptap插件已启动，当前配置:', config);
+  console.log('Howl-faptap: 插件已启动，当前配置:', config);
 });

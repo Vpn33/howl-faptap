@@ -179,7 +179,7 @@ async function getScript(url) {
         resolve(processedActions);
       })
       .catch(error => {
-        console.error('Howl-faptap: 获取脚本失败:', error);
+        console.log('Howl-faptap: 获取脚本失败:', error);
         reject(error);
       });
   });
@@ -273,7 +273,7 @@ function request(endpoint, method = 'GET', data = null) {
         }
       })
       .catch(error => {
-        console.error('Howl-faptap: 请求失败:', error.message);
+        console.log('Howl-faptap: 请求失败:', error.message);
         // 捕获所有错误并返回null，确保调用者不会崩溃
         resolve(null);
       });
@@ -410,7 +410,7 @@ async function initInject() {
             console.log("Howl-faptap: 成功获取视频源数据:", data);
             return data.data || [];
           } catch (error) {
-            console.error("Howl-faptap: 获取视频源失败:", error);
+            console.log("Howl-faptap: 获取视频源失败:", error);
             return [];
           }
         }
@@ -577,7 +577,7 @@ async function initInject() {
             console.log("Howl-faptap: 视频下载已触发");
             return true;
           } catch (error) {
-            console.error("Howl-faptap: 视频下载失败:", error);
+            console.log("Howl-faptap: 视频下载失败:", error);
             return false;
           }
         }
@@ -591,7 +591,7 @@ async function initInject() {
             const videoSources = await fetchVideoSources();
 
             if (!videoSources || videoSources.length === 0) {
-              console.error("Howl-faptap: 没有找到可用的视频源");
+              console.log("Howl-faptap: 没有找到可用的视频源");
               alert("无法获取视频源数据，请稍后重试");
               return;
             }
@@ -619,13 +619,13 @@ async function initInject() {
                 document.body.removeChild(scriptLink);
                 console.log("Howl-faptap: funscript下载已触发");
               } catch (error) {
-                console.error("Howl-faptap: funscript下载失败:", error);
+                console.log("Howl-faptap: funscript下载失败:", error);
               }
             }, 1000);
 
             console.log("Howl-faptap: 打包下载流程已完成");
           } catch (error) {
-            console.error("Howl-faptap: 打包下载流程失败:", error);
+            console.log("Howl-faptap: 打包下载流程失败:", error);
             if (error.message !== '用户取消选择') {
               alert(`下载失败: ${error.message}`);
             }
@@ -648,7 +648,7 @@ async function initInject() {
               window.open(videoData.stream_url_selfhosted, '_blank');
               console.log("Howl-faptap: 新窗口已打开");
             } catch (error) {
-              console.error("Howl-faptap: 打开新窗口失败:", error);
+              console.log("Howl-faptap: 打开新窗口失败:", error);
               alert("无法在新窗口中打开视频，请稍后重试");
             }
           };
@@ -679,7 +679,7 @@ async function initInject() {
         console.log('Howl-faptap: Funscript数据已缓存到本地存储');
       });
     } catch (cacheError) {
-      console.error('Howl-faptap: 缓存funscript数据失败:', cacheError);
+      console.log('Howl-faptap: 缓存funscript数据失败:', cacheError);
     }
 
     // 向background发送funscript数据
@@ -721,7 +721,7 @@ function setupVideoEventListeners(videlSelector) {
       }
     })
     .catch(error => {
-      console.error('Howl-faptap: 获取配置失败:', error);
+      console.log('Howl-faptap: 获取配置失败:', error);
     });
 
 
@@ -734,10 +734,10 @@ function setupVideoEventListeners(videlSelector) {
 
     if (startPlayer) {
       sendMessageToBackground('start_player', { fromTime: currentTime })
-        .catch(error => console.error('Howl-faptap: 启动播放器失败:', error));
+        .catch(error => console.log('Howl-faptap: 启动播放器失败:', error));
     } else {
       sendMessageToBackground('seek', { position: currentTime })
-        .catch(error => console.error('Howl-faptap: 定位失败:', error));
+        .catch(error => console.log('Howl-faptap: 定位失败:', error));
     }
 
     lastPosition = currentTime;
@@ -817,7 +817,7 @@ function setupVideoEventListeners(videlSelector) {
     }
 
     sendMessageToBackground('stop_player')
-      .catch(error => console.error('Howl-faptap: 停止播放器失败:', error));
+      .catch(error => console.log('Howl-faptap: 停止播放器失败:', error));
   };
 
   // 处理视频跳转事件
@@ -841,7 +841,7 @@ function setupVideoEventListeners(videlSelector) {
         isActive = true;
         // 发送start_player请求
         sendMessageToBackground('start_player')
-          .catch(error => console.error('Howl-faptap: 启动播放器失败:', error));
+          .catch(error => console.log('Howl-faptap: 启动播放器失败:', error));
       }
     }
   };
@@ -857,7 +857,7 @@ function setupVideoEventListeners(videlSelector) {
     }
 
     sendMessageToBackground('stop_player')
-      .catch(error => console.error('Howl-faptap: 停止播放器失败:', error));
+      .catch(error => console.log('Howl-faptap: 停止播放器失败:', error));
   };
 
   // 监听视频元素
