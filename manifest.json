@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Faptap Howl Integration",
+  "version": "1.0",
+  "description": "监测Faptap网页视频操作并调用Howl服务接口",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://faptap.net/*",
+    "http://localhost:*/*",
+    "http://127.0.0.1:*/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://faptap.net/*", "https://iframe.mediadelivery.net/play/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
