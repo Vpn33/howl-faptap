@@ -47,107 +47,10 @@
       width: 100%;
       background-color: #4CAF50; /* 绿色 */
     }
-    
-    #saveButton:hover {
-      background-color: #45a049;
-    }
-    
-    #loadFunscriptButton {
-      flex: 1;
-      margin-right: 5px;
-      background-color: #2196F3; /* 蓝色 */
-    }
-    
-    #clearCacheButton {
-      flex: 1;
-      margin-left: 5px;
-      background-color: #f44336; /* 红色 */
-    }
-    
-    #clearCacheButton:hover {
-      background-color: #d32f2f;
-    }
-    
-    #startPlayerButton {
-      background-color: #4CAF50; /* 绿色 */
-      flex: 1;
-      margin-right: 5px;
-    }
-    
-    #stopPlayerButton {
-      background-color: #f44336; /* 红色 */
-      flex: 1;
-      margin-left: 5px;
-      margin-bottom: 8px;
-    }
-    
-    #seekButton {
-      background-color: #ff9800; /* 橙色 */
-      margin-left: 5px;
-      flex: 0 0 auto;
-    }
-    
-    /* 行内布局样式 */
-    .inline-container {
-      display: flex;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-    
-    .inline-container input {
-      flex: 1;
-    }
-
-    /* 播放器控制区域特殊样式 */
-    #seekPosition {
-      width: 120px;
-      height: 34px;
-      padding: 8px;
-      font-size: 13px;
-      text-align: center;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-    }
-    
-    #seekPosition:focus {
-      outline: none;
-      border-color: #4CAF50;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1), 0 0 5px rgba(76, 175, 80, 0.3);
-    }
-    
-    /* 播放器控制按钮样式优化 */
-    #startPlayerButton, #seekButton, #stopPlayerButton {
-      min-width: 65px;
-      height: 34px; /* 统一按钮高度 */
-      padding: 8px 10px;
-      font-size: 13px;
-      font-weight: 500;
-      margin: 0;
-      flex: 0 0 auto;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 4px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* 轻微阴影增加层次感 */
-    }
-    
-    /* 播放器控制区域的整体布局优化 */
-    .form-group:last-child .inline-container {
-      flex-wrap: wrap; /* 必要时允许换行，避免在特定宽度下挤压 */
-      gap: 8px;
-    }
-    
-    /* 行内布局通用样式 */
-    .inline-container {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
 
     .status-message {
-      margin-top: 15px;
       padding: 10px;
+      margin-top: 10px;
       border-radius: 4px;
       display: none;
     }
@@ -155,56 +58,98 @@
     .success {
       background-color: #d4edda;
       color: #155724;
-      display: block;
+      border: 1px solid #c3e6cb;
     }
 
     .error {
       background-color: #f8d7da;
       color: #721c24;
-      display: block;
+      border: 1px solid #f5c6cb;
+    }
+
+    .inline-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    /* 按钮样式定义 */
+    .blue-button {
+      background-color: #1E88E5;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+
+    .green-button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+
+    .red-button {
+      background-color: #E53935;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+
+    .blue-button:hover, .green-button:hover, .red-button:hover {
+      opacity: 0.8;
+    }
+
+    .blue-button:disabled, .green-button:disabled, .red-button:disabled {
+      background-color: #BDBDBD;
+      cursor: not-allowed;
     }
   </style>
-  <script src="popup.js"></script>
 </head>
 
 <body>
   <h2>Howl Faptap - V1.0.0</h2>
-
+  
   <div class="form-group">
-    <label for="serverAddress">Howl 服务地址:</label>
-    <input type="text" id="serverAddress" placeholder="http://localhost:8080">
+    <label for="serverAddress">Howl服务地址:</label>
+    <input type="text" id="serverAddress" placeholder="例如: http://127.0.0.1">
   </div>
 
   <div class="form-group">
-    <label for="syncDelay">同步延迟 (毫秒):</label>
-    <input type="number" id="syncDelay" min="0" max="2000" placeholder="0">
+    <label for="syncDelay">同步延迟(毫秒):</label>
+    <input type="number" id="syncDelay" value="0" min="0" max="5000">
   </div>
 
   <button id="saveButton">保存配置</button>
-  
-  <!-- Funscript加载区域 -->
-  <div class="form-group">
-    <label>缓存的Funscript:</label>
-    <div id="funscriptTitle" style="padding: 8px; background-color: #f1f1f1; border-radius: 4px; min-height: 24px;">无缓存的Funscript数据</div>
-  </div>
-  
-  <div class="inline-container">
-    <button id="loadFunscriptButton" disabled>加载Funscript</button>
-    <button id="clearCacheButton" disabled>删除缓存</button>
-  </div>
-  
-  <!-- 功能按钮区域 - 行内布局 -->
-  <div class="form-group">
-    <label>播放器控制:</label>
+  <div id="statusMessage" class="status-message"></div>
+
+  <div style="margin-top: 20px;">
+    <h3>缓存的Funscript:</h3>
+    <div id="funscriptTitle" style="background-color: #f5f5f5; padding: 8px; border-radius: 4px; margin-bottom: 10px;">
+      无缓存的Funscript数据
+    </div>
     <div class="inline-container">
-      <input type="number" id="seekPosition" min="0" step="0.1" placeholder="播放位置 (秒)">
-      <button id="startPlayerButton">启动</button>
-      <button id="seekButton">跳转</button>
-      <button id="stopPlayerButton">停止</button>
+      <button id="loadFunscriptButton" class="blue-button" disabled>加载Funscript</button>
+      <button id="downloadFunscriptButton" class="green-button">下载Funscript</button>
+      <button id="clearCacheButton" class="red-button" disabled>删除缓存</button>
     </div>
   </div>
 
-  <div id="statusMessage" class="status-message"></div>
-</body>
+  <div style="margin-top: 20px;">
+    <h3>播放控制:</h3>
+    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+      <input type="number" id="seekPosition" placeholder="播放位置(秒)" style="flex-grow: 1; margin-right: 10px;">
+      <button id="startPlayerButton" style="background-color: #4CAF50; padding: 8px 12px; margin-right: 5px;">启动</button>
+      <button id="seekButton" style="background-color: #ff9800; padding: 8px 12px; margin-right: 5px;">跳转</button>
+      <button id="stopPlayerButton" style="background-color: #f44336; padding: 8px 12px;">停止</button>
+    </div>
+  </div>
 
+  <script src="popup.js"></script>
+</body>
 </html>

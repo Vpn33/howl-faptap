@@ -158,15 +158,18 @@ function loadCachedFunscript() {
     const funscriptTitle = document.getElementById('funscriptTitle');
     const loadButton = document.getElementById('loadFunscriptButton');
     const clearButton = document.getElementById('clearCacheButton');
+    const downloadButton = document.getElementById('downloadFunscriptButton'); // 添加下载按钮引用
 
     if (result.cached_funscript && result.cached_funscript.metadata && result.cached_funscript.metadata.title) {
       funscriptTitle.textContent = result.cached_funscript.metadata.title;
       loadButton.disabled = false;
       clearButton.disabled = false;
+      downloadButton.disabled = false; // 启用下载按钮
     } else {
       funscriptTitle.textContent = '无缓存的Funscript数据';
       loadButton.disabled = true;
       clearButton.disabled = true;
+      downloadButton.disabled = true; // 禁用下载按钮
     }
   });
 }
@@ -307,17 +310,70 @@ function clearCache() {
     const funscriptTitle = document.getElementById('funscriptTitle');
     const loadButton = document.getElementById('loadFunscriptButton');
     const clearButton = document.getElementById('clearCacheButton');
+    const downloadButton = document.getElementById('downloadFunscriptButton');
 
     funscriptTitle.textContent = '无缓存的Funscript数据';
     loadButton.disabled = true;
     clearButton.disabled = true;
+    downloadButton.disabled = true;
 
     // 显示成功消息
     showStatus('缓存已清除', 'success');
   });
 }
 
-// 设置事件监听
+// 下载Funscript文件
+function downloadFunscript() {
+  try {
+    console.log('Howl-faptap: 开始下载Funscript...');
+    
+    // 从本地存储获取缓存的funscript数据
+    chrome.storage.local.get(['cached_funscript'], (result) => {
+      if (result.cached_funscript) {
+        const cachedFunscript = result.cached_funscript;
+        const title = cachedFunscript.metadata?.title || '下载的Funscript';
+        
+        // 按照content.js中JSON属性的顺序，重新构建一个顺序正确的变量
+        const standardFunscript = {
+          metadata: {
+            title: cachedFunscript.metadata?.title || '',
+            description: cachedFunscript.metadata?.description || '',
+            performers: cachedFunscript.metadata?.performers || [],
+            video_url: cachedFunscript.metadata?.video_url || '',
+            tags: cachedFunscript.metadata?.tags || [],
+            duration: cachedFunscript.metadata?.duration || 0,
+            average_speed: cachedFunscript.metadata?.average_speed || 0,
+            creator: cachedFunscript.metadata?.creator || 'unknown'
+          },
+          actions: cachedFunscript.actions || []
+        };
+        
+        // 创建下载链接
+        const scriptLink = document.createElement('a');
+        scriptLink.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(standardFunscript));
+        scriptLink.download = `${title}.funscript`;
+        document.body.appendChild(scriptLink);
+        
+        // 触发下载
+        scriptLink.click();
+        
+        // 清理
+        setTimeout(() => {
+          document.body.removeChild(scriptLink);
+        }, 100);
+        
+        console.log('Howl-faptap: Funscript下载已触发，文件名:', `${title}.funscript`);
+      } else {
+        console.log('Howl-faptap: 没有找到缓存的Funscript数据');
+        alert('没有找到可下载的Funscript数据');
+      }
+    });
+  } catch (error) {
+    console.log('Howl-faptap: Funscript下载失败:', error);
+    alert('下载Funscript失败: ' + error.message);
+  }
+}
+
 // 在DOMContentLoaded中添加缓存清理逻辑
 document.addEventListener('DOMContentLoaded', () => {
   // 首先清理可能存在的无效缓存
@@ -344,7 +400,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('loadFunscriptButton').addEventListener('click', loadFunscriptToHowl);
   document.getElementById('clearCacheButton').addEventListener('click', clearCache);
 
-  // 添加功能按钮事件监听
+  // 添加下载按钮事件监听
+  document.getElementById('downloadFunscriptButton')?.addEventListener('click', downloadFunscript);
   document.getElementById('startPlayerButton').addEventListener('click', startPlayer);
   document.getElementById('stopPlayerButton').addEventListener('click', stopPlayer);
   document.getElementById('seekButton').addEventListener('click', seekToPosition);
