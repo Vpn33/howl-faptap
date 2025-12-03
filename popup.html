@@ -109,6 +109,80 @@
       background-color: #BDBDBD;
       cursor: not-allowed;
     }
+
+    /* 播放控制样式 */
+    .section {
+      margin-top: 20px;
+    }
+
+    .control-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: nowrap;
+    }
+
+    .control-input {
+      flex-grow: 1;
+      margin-right: 10px;
+      padding: 8px;
+      height: 34px;
+      box-sizing: border-box;
+    }
+
+    .start-button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      margin-right: 5px;
+      height: 34px;
+      min-width: 60px;
+      box-sizing: border-box;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    .seek-button {
+      background-color: #ff9800;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      margin-right: 5px;
+      height: 34px;
+      min-width: 60px;
+      box-sizing: border-box;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    .stop-button {
+      background-color: #f44336;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      height: 34px;
+      min-width: 60px;
+      box-sizing: border-box;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    .start-button:hover, .seek-button:hover, .stop-button:hover {
+      opacity: 0.9;
+    }
   </style>
 </head>
 
@@ -140,13 +214,13 @@
     </div>
   </div>
 
-  <div style="margin-top: 20px;">
+  <div class="section">
     <h3>播放控制:</h3>
-    <div style="display: flex; align-items: center; margin-bottom: 10px;">
-      <input type="number" id="seekPosition" placeholder="播放位置(秒)" style="flex-grow: 1; margin-right: 10px;">
-      <button id="startPlayerButton" style="background-color: #4CAF50; padding: 8px 12px; margin-right: 5px;">启动</button>
-      <button id="seekButton" style="background-color: #ff9800; padding: 8px 12px; margin-right: 5px;">跳转</button>
-      <button id="stopPlayerButton" style="background-color: #f44336; padding: 8px 12px;">停止</button>
+    <div class="control-container">
+      <input type="number" id="seekPosition" placeholder="播放位置(秒)" class="control-input">
+      <button id="startPlayerButton" class="start-button">启动</button>
+      <button id="seekButton" class="seek-button">跳转</button>
+      <button id="stopPlayerButton" class="stop-button">停止</button>
     </div>
   </div>
 
