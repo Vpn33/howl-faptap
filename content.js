@@ -1,4 +1,3 @@
-// 向background.js发送消息
 
 function findVideoElement(selector = 'video#player') {
   // 首先在当前文档中查找
@@ -289,18 +288,21 @@ async function initInject() {
 
       // 从缓存获取funscript数据
       const cachedData = await new Promise(resolve => {
-        chrome.storage.local.get(['cached_funscript'], result => {
-          resolve(result.cached_funscript || null);
+        chrome.storage.local.get(['cached_funscripts'], result => {
+          resolve(result.cached_funscripts || []);
         });
       });
 
-      if (cachedData) {
+      // 如果有多个脚本，只使用第一个
+      const firstFunscript = cachedData.length > 0 ? cachedData[0] : null;
+
+      if (firstFunscript) {
         console.log('Howl-faptap: 从缓存成功加载funscript数据');
 
         // 调用load_funscript
         const response = await sendMessageToBackground('load_funscript', {
-          title: cachedData.metadata.title || '视频',
-          funscriptContent: JSON.stringify(cachedData)
+          title: firstFunscript.metadata.title || '视频',
+          funscriptContent: JSON.stringify(firstFunscript)
         });
 
         if (response.success) {
@@ -673,10 +675,38 @@ async function initInject() {
 
     // 缓存funscript数据到chrome.storage.local，以便popup页面可以访问
     try {
-      chrome.storage.local.set({
-        'cached_funscript': funscript
-      }, () => {
-        console.log('Howl-faptap: Funscript数据已缓存到本地存储');
+      // 首先获取现有的缓存数组和配置
+      chrome.storage.local.get(['cached_funscripts'], result => {
+        let funscripts = result.cached_funscripts || [];
+        
+        // 获取配置以检查最大缓存数量
+        chrome.storage.sync.get(['maxCachedScripts'], configResult => {
+          const maxCachedScripts = configResult.maxCachedScripts || 10;
+          
+          // 检查是否已存在相同的funscript
+          const existingIndex = funscripts.findIndex(fs => fs.metadata?.title === funscript.metadata?.title);
+          
+          if (existingIndex >= 0) {
+            // 如果存在，替换它
+            funscripts[existingIndex] = funscript;
+          } else {
+            // 如果不存在，添加到数组
+            funscripts.push(funscript);
+            
+            // 检查是否超过最大缓存数量
+            if (funscripts.length > maxCachedScripts) {
+              // 移除最旧的脚本（数组中的第一个）
+              funscripts.shift();
+            }
+          }
+          
+          // 保存更新后的数组
+          chrome.storage.local.set({
+            'cached_funscripts': funscripts
+          }, () => {
+            console.log('Howl-faptap: Funscript数据已缓存到本地存储');
+          });
+        });
       });
     } catch (cacheError) {
       console.log('Howl-faptap: 缓存funscript数据失败:', cacheError);

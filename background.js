@@ -1,7 +1,8 @@
 // 默认配置
 const DEFAULT_CONFIG = {
   serverIp: '127.0.0.1',
-  syncDelay: 500
+  syncDelay: 500,
+  maxCachedScripts: 5
 };
 
 const REMOTE_PORT = 4695;
@@ -10,11 +11,12 @@ let currentConfig = { ...DEFAULT_CONFIG };
 // 从Chrome存储加载配置
 async function loadConfig() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get(['serverAddress', 'syncDelay'], (result) => {
+    chrome.storage.sync.get(['serverAddress', 'syncDelay', 'maxCachedScripts'], (result) => {
       // 统一使用serverAddress字段，并确保默认值为http://127.0.0.1
       const defaultConfig = {
         serverAddress: 'http://127.0.0.1',
-        syncDelay: 500
+        syncDelay: 500,
+        maxCachedScripts: 5
       };
       // 合并配置，确保即使result中没有serverAddress，也会使用默认值
       let serverAddress = defaultConfig.serverAddress;
@@ -207,9 +209,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // 使用异步处理所有消息
   (async () => {
     try {
+      const config = await loadConfig();
+      let calTime = config.syncDelay > 0 ? config.syncDelay / 1000 : 0;
       switch (action) {
         case 'get_config':
-          const config = await loadConfig();
           sendResponse({
             success: true,
             data: config
@@ -229,8 +232,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse(loadResult);
           break;
 
+        case 'update_funscript_selection':
+          // 保存选中的funscript信息到storage
+          await chrome.storage.local.set({
+            selected_funscript_title: message.funscriptTitle
+          });
+          
+          // 尝试向popup发送消息更新选中状态
+          chrome.runtime.sendMessage({
+            action: 'update_funscript_selection_forpop',
+            funscriptTitle: message.funscriptTitle
+          }, (response) => {
+            // 忽略连接错误，因为popup可能没有打开
+            if (chrome.runtime.lastError) {
+              console.log('Howl-faptap: 没有找到接收消息的popup窗口:', chrome.runtime.lastError.message);
+            }
+          });
+          
+          sendResponse({ success: true });
+          break;
+
         case 'start_player':
-          const startResult = await startPlayer(message.fromTime || 0);
+          const startResult = await startPlayer(calTime + message.fromTime);
           sendResponse(startResult);
           break;
 
@@ -240,7 +263,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           break;
 
         case 'seek':
-          const seekResult = await seekPlayer(message.position);
+          const seekResult = await seekPlayer(calTime + message.position);
           sendResponse(seekResult);
           break;
 

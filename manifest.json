@@ -11,7 +11,8 @@
   "host_permissions": [
     "https://faptap.net/*",
     "http://localhost:*/*",
-    "http://127.0.0.1:*/*"
+    "http://127.0.0.1:*/*",
+    "https://*.eroscripts.com/*"
   ],
   "optional_host_permissions": [
     "https://*/*",
@@ -31,8 +32,38 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://faptap.net/*", "https://iframe.mediadelivery.net/play/*"],
-      "js": ["content.js"]
+      "matches": [
+        "https://faptap.net/*",
+        "https://iframe.mediadelivery.net/play/*"
+      ],
+      "js": [
+        "common_video.js",
+        "content.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://discuss.eroscripts.com/t/*"
+      ],
+      "js": [
+        "ero_content.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://*.pornhub.com/view_video.php?viewkey=*",
+        "https://xhamster.com/videos/*",
+        "https://www.xvideos.com/video.*",
+        "https://rule34video.com/video/*",
+        "https://pixeldrain.com/u/*",
+        "https://mega.nz/file/*",
+        "https://mega.nz/folder/*",
+        "https://gofile.io/d/*"
+      ],
+      "js": [
+        "common_video.js",
+        "video_listener.js"
+      ]
     }
   ],
   "icons": {
