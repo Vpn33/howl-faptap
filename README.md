@@ -1,6 +1,7 @@
 # Howl-Faptap Chrome 插件
 
 ## 功能介绍
+![](https://raw.githubusercontent.com/Vpn33/howl-faptap/refs/heads/main/icon128.png)
 这个Chrome插件用于监测Faptap、PornHub、XVideos、XHamster、rule34video等主流视频网站和网盘（如Pixeldrain、mega、gofile等）上的视频操作，并将操作同步到Howl服务。并且修复了由于网站问题或作者限制导致部分脚本和视频不能下载的问题(如果源文件丢失，则另当别论)，当用户播放、暂停或跳转到特定时间点时，插件会自动调用Howl服务接口。
 
 ## 安装方法
