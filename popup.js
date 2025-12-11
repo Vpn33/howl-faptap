@@ -197,7 +197,31 @@ function loadCachedFunscript() {
         // 如果只有一个元素，默认选中
         if (funscripts.length === 1) {
           radio.checked = true;
+          // 保存到localStorage
+          chrome.storage.local.set({ 'selected_funscript_title': funscript.metadata?.title || '未命名' });
         }
+
+        // 添加onchange事件监听器，当选中时保存到localStorage并通知background
+        radio.addEventListener('change', () => {
+          if (radio.checked) {
+            // 保存选中的funscript标题到localStorage
+            const selectedTitle = funscript.metadata?.title || '未命名';
+            chrome.storage.local.set({ 'selected_funscript_title': selectedTitle }, () => {
+              console.log('Howl-faptap: 已保存选中的funscript标题到localStorage:', selectedTitle);
+            });
+            
+            // 发送消息到background.js，更新选中状态
+            chrome.runtime.sendMessage({ 
+              action: 'update_funscript_selection', 
+              funscriptTitle: selectedTitle 
+            }, (response) => {
+              // 忽略连接错误，因为background.js应该始终运行
+              if (chrome.runtime.lastError) {
+                console.log('Howl-faptap: 发送消息到background.js失败:', chrome.runtime.lastError.message);
+              }
+            });
+          }
+        });
 
         selectCell.appendChild(radio);
         row.appendChild(selectCell);
@@ -511,6 +535,107 @@ function clearAllCache() {
   });
 }
 
+function faptapSearch(){
+  // 获取选中的脚本索引
+  const selectedRadio = document.querySelector('input[name="funscriptSelect"]:checked');
+  if (!selectedRadio) {
+    showStatus('请先选择一个脚本', true);
+    return;
+  }
+
+  chrome.storage.local.get('cached_funscripts', (result) => {
+    const funscripts = result.cached_funscripts || [];
+
+    const index = parseInt(selectedRadio.value);
+    if(index < 0 || index >= funscripts.length){
+      return;
+    }
+
+    // 移除选中的脚本
+    const funscript = funscripts[index];
+    const fullTitle = funscript.metadata?.title || '未命名';
+    // 截取后缀前的名称（假设后缀是.funscript）
+    let searchTitle = fullTitle.replace(/\.funscript$/i, '');
+    searchTitle = processTitle(searchTitle);
+
+    // 更新本地存储
+    chrome.tabs.create({
+      url: `https://faptap.net/videos?q=${searchTitle}`
+    });
+  });
+}
+
+function pornSearch() {
+  // 获取选中的脚本索引
+  const selectedRadio = document.querySelector('input[name="funscriptSelect"]:checked');
+  if (!selectedRadio) {
+    showStatus('请先选择一个脚本', true);
+    return;
+  }
+
+  chrome.storage.local.get('cached_funscripts', (result) => {
+    const funscripts = result.cached_funscripts || [];
+
+    const index = parseInt(selectedRadio.value);
+    if(index < 0 || index >= funscripts.length){
+      return;
+    }
+
+    // 移除选中的脚本
+    const funscript = funscripts[index];
+    const fullTitle = funscript.metadata?.title || '未命名';
+    // 截取后缀前的名称（假设后缀是.funscript）
+    let searchTitle = fullTitle.replace(/\.funscript$/i, '');
+    searchTitle = processTitle(searchTitle);
+
+    // 更新本地存储
+    chrome.tabs.create({
+      url: `https://www.pornhub.com/video/search?search=${searchTitle}`
+    });
+  });
+}
+
+// XVideos搜索
+function xvideosSearch() {
+// 获取选中的脚本索引
+  const selectedRadio = document.querySelector('input[name="funscriptSelect"]:checked');
+  if (!selectedRadio) {
+    showStatus('请先选择一个脚本', true);
+    return;
+  }
+
+  chrome.storage.local.get('cached_funscripts', (result) => {
+    const funscripts = result.cached_funscripts || [];
+
+    const index = parseInt(selectedRadio.value);
+    if(index < 0 || index >= funscripts.length){
+      return;
+    }
+
+    // 移除选中的脚本
+    const funscript = funscripts[index];
+    const fullTitle = funscript.metadata?.title || '未命名';
+    // 截取后缀前的名称（假设后缀是.funscript）
+    let searchTitle = fullTitle.replace(/\.funscript$/i, '');
+    searchTitle = processTitle(searchTitle);
+
+    // 更新本地存储
+    chrome.tabs.create({
+      url: `https://www.xvideos.com/?k=${searchTitle}`
+    });
+  });
+}
+
+// 处理标题：非英文和数字的符号替换为[+]
+function processTitle(title) {
+  // 只替换空白字符和符号（保留中文）为+号
+  // 中文字符范围：\u4e00-\u9fa5
+  let processed = title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '+');
+  // 将连续的+号替换为单个+号
+  processed = processed.replace(/\++/g, '+');
+  return processed;
+}
+
 // 下载Funscript文件
 function downloadFunscript() {
   // 获取选中的脚本索引
@@ -605,6 +730,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('seekButton').addEventListener('click', seekToPosition);
   document.getElementById('clearAllCacheButton')?.addEventListener('click', clearAllCache);
 
+  // 搜索按钮
+  document.getElementById('faptapButton').addEventListener('click', faptapSearch);
+  document.getElementById('pornButton').addEventListener('click', pornSearch);
+  document.getElementById('xvideosButton').addEventListener('click', xvideosSearch);
+  
   // 为跳转位置输入框添加回车支持
   document.getElementById('seekPosition').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {

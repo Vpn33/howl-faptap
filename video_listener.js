@@ -16,6 +16,8 @@ function initVideoListener() {
     console.log('Howl-faptap:  是否为mega.nz/folder: ' + isMegaFolderPage);
     const isGoFilePage = (window.location.hostname.includes('gofile.io') && window.location.pathname.includes('/d'));
     console.log('Howl-faptap:  是否为gofile.io/d: ' + isGoFilePage);
+    const isSpankbangPage = (window.location.hostname.includes('spankbang.com') && window.location.pathname.includes('/video'));
+    console.log('Howl-faptap:  是否为spankbang.com/video: ' + isSpankbangPage);
 
 
     if (isPornHubPage) {
@@ -51,7 +53,11 @@ function initVideoListener() {
         // 获取视频标题元素
         autoLoadFunscript('.div.truncate a');
         setupVideoEventListeners('video');
-    }
+    } else if (isSpankbangPage) {
+        // 获取视频标题元素
+        autoLoadFunscript('.main_content_title');
+        setupVideoEventListeners('video#main_video_player_html5_api');
+    } 
     return;
 }
 

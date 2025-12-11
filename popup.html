@@ -74,6 +74,15 @@
     }
 
     /* 按钮样式定义 */
+    .yellow-button {
+      background-color: #ff9800;;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+
     .blue-button {
       background-color: #1E88E5;
       color: white;
@@ -218,7 +227,7 @@
 </head>
 
 <body>
-  <h2>Howl Faptap - V1.0.1</h2>
+  <h2>Howl Faptap - V1.0.2</h2>
   
   <div class="form-group">
     <label for="serverAddress">Howl服务地址:</label>
@@ -262,6 +271,11 @@
       <button id="downloadFunscriptButton" class="green-button" disabled>下载脚本</button>
       <button id="clearCacheButton" class="red-button" disabled>删除脚本</button>
       <button id="clearAllCacheButton" class="red-button">清空脚本</button>
+    </div>
+    <div class="inline-container">
+      <button id="faptapButton" class="yellow-button">在FapTap搜索</button>
+      <button id="pornButton" class="green-button">在Porn搜索</button>
+      <button id="xvideosButton" class="blue-button">在XVideos搜索</button>
     </div>
   </div>
 
