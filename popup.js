@@ -30,6 +30,7 @@ function loadConfig() {
 
       // 设置界面值
       document.getElementById('serverAddress').value = serverAddress;
+      document.getElementById('howlKey').value = config.howlKey || '';
       document.getElementById('syncDelay').value = config.syncDelay !== undefined ? config.syncDelay : '0';
       document.getElementById('maxCachedScripts').value = config.maxCachedScripts !== undefined ? config.maxCachedScripts : '10';
       console.log('Howl-faptap: 从本地缓存加载配置:', config);
@@ -57,26 +58,28 @@ function loadConfig() {
 
       // 设置界面值
       document.getElementById('serverAddress').value = serverAddress;
+      document.getElementById('howlKey').value = config.howlKey || '';
       document.getElementById('syncDelay').value = syncDelay;
       document.getElementById('maxCachedScripts').value = config.maxCachedScripts !== undefined ? config.maxCachedScripts : '10';
 
       // 同步到本地缓存
-      saveToLocalCache(serverAddress, syncDelay, config.maxCachedScripts);
+      saveToLocalCache(serverAddress, config.howlKey, syncDelay, config.maxCachedScripts);
     } catch (error) {
       console.log('Howl-faptap: 加载配置失败:', error);
       // 使用默认值
       document.getElementById('serverAddress').value = 'http://127.0.0.1';
+      document.getElementById('howlKey').value = '';
       document.getElementById('syncDelay').value = '0';
       document.getElementById('maxCachedScripts').value = '5';
 
       // 同步默认值到本地缓存
-      saveToLocalCache('http://127.0.0.1', 0, 5);
+      saveToLocalCache('http://127.0.0.1', '', 0, 5);
     }
   });
 }
 
 // 保存到本地缓存
-function saveToLocalCache(serverAddress, syncDelay, maxCachedScripts) {
+function saveToLocalCache(serverAddress, howlKey, syncDelay, maxCachedScripts) {
   try {
     // 验证serverAddress有效性
     if (typeof serverAddress !== 'string' || serverAddress.includes('undefined')) {
@@ -86,6 +89,7 @@ function saveToLocalCache(serverAddress, syncDelay, maxCachedScripts) {
 
     const config = {
       serverAddress: serverAddress,
+      howlKey: howlKey || '',
       syncDelay: syncDelay,
       maxCachedScripts: maxCachedScripts !== undefined ? maxCachedScripts : 5
     };
@@ -99,7 +103,7 @@ function saveToLocalCache(serverAddress, syncDelay, maxCachedScripts) {
 // 保存配置
 function saveConfig() {
   let serverAddress = document.getElementById('serverAddress').value.trim();
-
+  const howlKey = document.getElementById('howlKey').value.trim();
   const syncDelay = parseInt(document.getElementById('syncDelay').value);
   const maxCachedScripts = parseInt(document.getElementById('maxCachedScripts').value);
 
@@ -130,11 +134,12 @@ function saveConfig() {
   }
 
   // 保存到本地缓存
-  saveToLocalCache(serverAddress, syncDelay, maxCachedScripts);
+  saveToLocalCache(serverAddress, howlKey, syncDelay, maxCachedScripts);
 
   // 准备配置对象
   const config = {
     serverAddress: serverAddress,
+    howlKey: howlKey,
     syncDelay: syncDelay,
     maxCachedScripts: maxCachedScripts,
     action: 'update_config' // 包含action字段

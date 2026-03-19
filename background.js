@@ -11,10 +11,11 @@ let currentConfig = { ...DEFAULT_CONFIG };
 // 从Chrome存储加载配置
 async function loadConfig() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get(['serverAddress', 'syncDelay', 'maxCachedScripts'], (result) => {
+    chrome.storage.sync.get(['serverAddress', 'howlKey', 'syncDelay', 'maxCachedScripts'], (result) => {
       // 统一使用serverAddress字段，并确保默认值为http://127.0.0.1
       const defaultConfig = {
         serverAddress: 'http://127.0.0.1',
+        howlKey: '',
         syncDelay: 500,
         maxCachedScripts: 5
       };
@@ -89,6 +90,11 @@ async function callHowlApi(endpoint, data = {}, port = 4695, method = 'POST') {
       'Accept-Encoding': 'gzip, deflate, br',
       'Connection': 'keep-alive'
     };
+
+    // 添加Authorization头
+    if (config.howlKey) {
+      headers['Authorization'] = `Bearer ${config.howlKey}`;
+    }
 
     const response = await fetch(url, {
       method,
