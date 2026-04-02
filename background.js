@@ -11,11 +11,12 @@ let currentConfig = { ...DEFAULT_CONFIG };
 // 从Chrome存储加载配置
 async function loadConfig() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get(['serverAddress', 'howlKey', 'syncDelay', 'maxCachedScripts'], (result) => {
+    chrome.storage.sync.get(['serverAddress', 'howlKey', 'howlEnabled', 'syncDelay', 'maxCachedScripts'], (result) => {
       // 统一使用serverAddress字段，并确保默认值为http://127.0.0.1
       const defaultConfig = {
         serverAddress: 'http://127.0.0.1',
         howlKey: '',
+        howlEnabled: true,
         syncDelay: 500,
         maxCachedScripts: 5
       };
@@ -58,6 +59,16 @@ async function saveConfig(config) {
 async function callHowlApi(endpoint, data = {}, port = 4695, method = 'POST') {
   try {
     const config = await loadConfig();
+    
+    // 检查Howl服务是否启用
+    if (!config.howlEnabled) {
+      console.log('Howl-faptap: Howl服务已禁用，跳过API调用');
+      return {
+        success: false,
+        error: 'Howl服务已禁用'
+      };
+    }
+    
     // 确保serverAddress存在且有效，如果无效则使用默认值
     let serverAddress = 'http://127.0.0.1';
     

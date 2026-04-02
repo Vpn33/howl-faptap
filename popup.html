@@ -223,12 +223,66 @@
     .start-button:hover, .seek-button:hover, .stop-button:hover {
       opacity: 0.9;
     }
+
+    /* 开关样式 */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #4CAF50;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
   </style>
 </head>
 
 <body>
   <h2>Howl Faptap - V1.0.3</h2>
   
+  <div class="form-group">
+    <label for="howlEnabled">Howl服务:</label>
+    <label class="switch">
+      <input type="checkbox" id="howlEnabled" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+
   <div class="form-group">
     <label for="serverAddress">Howl服务地址:</label>
     <input type="text" id="serverAddress" placeholder="例如: http://127.0.0.1">
