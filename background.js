@@ -284,6 +284,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse(seekResult);
           break;
 
+        case 'retry_listening':
+          // 向当前活动标签页发送重试监听消息
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs && tabs[0]) {
+              chrome.tabs.sendMessage(tabs[0].id, { action: 'retry_listening' }, (response) => {
+                if (chrome.runtime.lastError) {
+                  console.log('Howl-faptap: 发送重试消息到content失败:', chrome.runtime.lastError.message);
+                  sendResponse({ success: false, error: '当前页面没有可用的content脚本' });
+                } else {
+                  sendResponse(response || { success: false, error: '未收到响应' });
+                }
+              });
+            } else {
+              sendResponse({ success: false, error: '未找到活动标签页' });
+            }
+          });
+          break;
+
         default:
           console.log('Howl-faptap: 未知的消息动作:', action);
           sendResponse({

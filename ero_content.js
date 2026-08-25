@@ -51,7 +51,7 @@ initInject = () => {
                 if (!funscript.metadata) {
                     funscript.metadata = {};
                 }
-                if (!funscript.metadata.title) {
+                if (!funscript.metadata.title || funscript.metadata.title !== title) {
                     funscript.metadata.title = title;
                 }
                 console.log('Howl-faptap:  脚本内容:', funscript);
@@ -148,3 +148,13 @@ async function getFunscript(url) {
 }
 
 initializeExtension();
+
+// 监听来自popup/background的重试监听消息
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'retry_listening') {
+    console.log('Howl-faptap: 收到重试监听请求，重新初始化扩展');
+    initializeExtension();
+    sendResponse({ success: true });
+  }
+  return true;
+});

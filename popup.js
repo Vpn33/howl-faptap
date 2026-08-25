@@ -429,6 +429,24 @@ function stopPlayer() {
   });
 }
 
+// 重试监听 - 不刷新页面重新初始化content脚本
+function retryListening() {
+  showStatus('正在重试监听...');
+
+  chrome.runtime.sendMessage({ action: 'retry_listening' }, (response) => {
+    try {
+      if (response && response.success) {
+        showStatus('重试监听成功');
+      } else {
+        showStatus('重试监听失败: ' + (response?.error || '未知错误'), true);
+      }
+    } catch (error) {
+      console.log('Howl-faptap: 重试监听响应处理失败:', error);
+      showStatus('重试监听失败，请重试', true);
+    }
+  });
+}
+
 // 跳转播放位置
 function seekToPosition() {
   const positionInput = document.getElementById('seekPosition');
@@ -733,6 +751,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('saveButton').addEventListener('click', saveConfig);
   document.getElementById('loadFunscriptButton').addEventListener('click', loadFunscriptToHowl);
   document.getElementById('clearCacheButton').addEventListener('click', clearCache);
+  document.getElementById('retryButton').addEventListener('click', retryListening);
 
   // 添加下载按钮事件监听
   document.getElementById('downloadFunscriptButton')?.addEventListener('click', downloadFunscript);

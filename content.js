@@ -2,7 +2,7 @@
 function findVideoElement(selector = 'video#player') {
   // 首先在当前文档中查找
   let element = document.querySelector(selector);
-  
+
   // 如果没找到，递归查找所有iframe
   if (!element) {
     const iframes = document.querySelectorAll('iframe');
@@ -17,7 +17,7 @@ function findVideoElement(selector = 'video#player') {
       }
     }
   }
-  
+
   return element;
 }
 
@@ -25,7 +25,7 @@ function findVideoElement(selector = 'video#player') {
 function findVideoElementInIframe(doc, selector) {
   // 在当前iframe文档中查找
   let element = doc.querySelector(selector);
-  
+
   // 如果没找到，继续查找该iframe中的嵌套iframe
   if (!element) {
     const iframes = doc.querySelectorAll('iframe');
@@ -39,7 +39,7 @@ function findVideoElementInIframe(doc, selector) {
       }
     }
   }
-  
+
   return element;
 }
 
@@ -53,6 +53,26 @@ function sendMessageToBackground(action, data = {}) {
       }
     });
   });
+}
+
+function waitForElementWithDom(dom, selector, callback, timeout = 20000) {
+  const interval = 100;
+  const maxAttempts = timeout / interval;
+  let attempts = 0;
+
+  const checkElementForDom = () => {
+    const element = dom.querySelector(selector);
+    if (element) {
+      callback(element);
+    } else if (attempts < maxAttempts) {
+      attempts++;
+      setTimeout(checkElementForDom, interval);
+    } else {
+      console.log(`Howl-faptap: 等待元素超时: ${selector}`);
+    }
+  };
+
+  checkElementForDom();
 }
 
 // 等待元素加载完成
@@ -70,7 +90,7 @@ function waitForElement(selector, callback, timeout = 10000) {
       setTimeout(checkElement, interval);
     } else {
       console.log(`Howl-faptap: 等待元素超时: ${selector}`);
-      
+
       // 对于iframe.mediadelivery.net，尝试在iframe中直接查找
       if (window.location.hostname === 'iframe.mediadelivery.net') {
         console.log('Howl-faptap: 在iframe.mediadelivery.net页面上尝试备用查找方法');
@@ -87,7 +107,7 @@ function findVideoInNestedIframes(selector, callback) {
   const checkIframes = () => {
     const iframes = document.querySelectorAll('iframe');
     let found = false;
-    
+
     for (let i = 0; i < iframes.length; i++) {
       try {
         if (iframes[i].contentDocument) {
@@ -99,7 +119,7 @@ function findVideoInNestedIframes(selector, callback) {
             found = true;
             break;
           }
-          
+
           // 如果没找到，尝试在嵌套iframe中查找
           const nestedIframes = iframes[i].contentDocument.querySelectorAll('iframe');
           for (let j = 0; j < nestedIframes.length; j++) {
@@ -122,13 +142,13 @@ function findVideoInNestedIframes(selector, callback) {
         console.log('Howl-faptap: 访问iframe内容时出错:', error.message);
       }
     }
-    
+
     if (!found) {
       // 如果没找到，500毫秒后重试一次
       setTimeout(checkIframes, 500);
     }
   };
-  
+
   checkIframes();
 }
 
@@ -678,28 +698,28 @@ async function initInject() {
       // 首先获取现有的缓存数组和配置
       chrome.storage.local.get(['cached_funscripts'], result => {
         let funscripts = result.cached_funscripts || [];
-        
+
         // 获取配置以检查最大缓存数量
         chrome.storage.sync.get(['maxCachedScripts'], configResult => {
           const maxCachedScripts = configResult.maxCachedScripts || 10;
-          
+
           // 检查是否已存在相同的funscript
           const existingIndex = funscripts.findIndex(fs => fs.metadata?.title === funscript.metadata?.title);
-          
+
           if (existingIndex >= 0) {
             // 如果存在，替换它
             funscripts[existingIndex] = funscript;
           } else {
             // 如果不存在，添加到数组
             funscripts.push(funscript);
-            
+
             // 检查是否超过最大缓存数量
             if (funscripts.length > maxCachedScripts) {
               // 移除最旧的脚本（数组中的第一个）
               funscripts.shift();
             }
           }
-          
+
           // 保存更新后的数组
           chrome.storage.local.set({
             'cached_funscripts': funscripts
@@ -728,12 +748,100 @@ async function initInject() {
       // 注册video事件监听
       setupVideoEventListeners('video#player');
 
+      // 如果是vr视频 要单独处理
+      if (videoData.vr === true) {
+        setupVRVideoEventListeners('dl8-video');
+      }
+
     } catch (error) {
       console.log('Howl-faptap:  发送funscript到background失败:', error.message);
     }
   } catch (error) {
     console.log('Howl-faptap: 初始化过程出错:', error);
   }
+}
+
+function setupVRVideoEventListeners(videlSelector) {
+  waitForElement(videlSelector, (videoElement) => {
+    console.log('Howl-faptap: 找到VR视频元素，开始监听事件');
+    // VR播放器显示画面区域
+    waitForElement('#dl8-content-container canvas', (canvas) => {
+      canvas.addEventListener('click', () => {
+        var playBtn = document.querySelector('#dl8-content-container .ea05c .dl8FadeInUp button.dl8Btn');
+        var currentTime = timeStrToSeconds(document.querySelector('#dl8-content-container .a9e7c.dl8FadeInUp .a074a').textContent.split('/')[0].trim());
+        // 点击显示画面区域时，如果显示的是播放按钮就停止播放
+        if (playBtn.querySelector('i.iconPlay')) {
+          sendMessageToBackground('stop_player', { fromTime: currentTime })
+            .catch(error => console.log('Howl-faptap: 停止播放器失败:', error));
+        }
+        // 点击显示画面区域时，如果显示的是播放按钮就停止播放
+        if (playBtn.querySelector('i.iconPause')) {
+          sendMessageToBackground('start_player', { fromTime: currentTime })
+            .catch(error => console.log('Howl-faptap: 启动播放器失败:', error));
+        }
+      });
+    });
+
+    // VR播放器播放按钮区域 网页端
+    waitForElement('#dl8-content-container .ea05c .dl8FadeInUp button.dl8Btn', (btn) => {
+      
+      btn.addEventListener('click', () => {
+        var currentTime = timeStrToSeconds(document.querySelector('#dl8-content-container .e44ef.dl8FadeInUp .ddad0').textContent.trim());
+        if (btn.querySelector('i.iconPlay')) {
+          console.log('Howl-faptap: 点击了VR视频播放按钮');
+          sendMessageToBackground('start_player', { fromTime: currentTime })
+            .catch(error => console.log('Howl-faptap: 启动播放器失败:', error));
+        }
+        if (btn.querySelector('i.iconPause')) {
+          console.log('Howl-faptap: 点击了VR视频暂停按钮');
+          sendMessageToBackground('stop_player', { fromTime: currentTime })
+            .catch(error => console.log('Howl-faptap: 停止播放器失败:', error));
+        }
+      });
+    });
+    // VR播放器跳转区域 网页端、手机端
+    waitForElement('#dl8-content-container .e44ef.dl8FadeInUp', (btn) => {
+
+      btn.addEventListener('click', () => {
+        console.log('Howl-faptap: 点击了VR视频跳转');
+        var timeStr = btn.querySelector('.ddad0').textContent.trim();
+        console.log('Howl-faptap: 找到VR视频跳转位置:', timeStr);
+
+        sendMessageToBackground('seek', { position: timeStrToSeconds(timeStr) })
+          .catch(error => console.log('Howl-faptap: 定位失败:', error));
+      });
+    });
+    // VR播放器播放按钮区域 手机端
+    waitForElement('#dl8-content-container .dl8Btn.dl8WiderTouch.mobile', (btn) => {
+      
+      btn.addEventListener('click', () => {
+        var currentTime = timeStrToSeconds(document.querySelector('#dl8-content-container .aeaf2 .dl8FadeIn .a074a').textContent.trim());
+        if (btn.querySelector('i.iconPlay')) {
+          console.log('Howl-faptap: 点击了VR视频播放按钮');
+          sendMessageToBackground('start_player', { fromTime: currentTime })
+            .catch(error => console.log('Howl-faptap: 启动播放器失败:', error));
+        }
+        if (btn.querySelector('i.iconPause')) {
+          console.log('Howl-faptap: 点击了VR视频暂停按钮');
+          sendMessageToBackground('stop_player', { fromTime: currentTime })
+            .catch(error => console.log('Howl-faptap: 停止播放器失败:', error));
+        }
+      });
+    });
+  });
+}
+function timeStrToSeconds(timeStr) {
+  // 将时间字符串(如"6:54"或"1:06:54")转换为秒
+  var parts = timeStr.split(':').map(Number);
+  var position = 0;
+  if (parts.length === 3) {
+    position = parts[0] * 3600 + parts[1] * 60 + parts[2];
+  } else if (parts.length === 2) {
+    position = parts[0] * 60 + parts[1];
+  } else {
+    position = parts[0];
+  }
+  return position;
 }
 
 // 设置视频事件监听器
@@ -933,15 +1041,15 @@ function setupVideoEventListeners(videlSelector) {
 function initializeExtension() {
   // 添加详细日志以诊断匹配问题
   console.log('Howl-faptap: 当前页面信息: hostname=' + window.location.hostname + ', pathname=' + window.location.pathname);
-  
+
   const isVideoPage = window.location.pathname.startsWith('/v/');
   const isIframeMediaPage = (window.location.hostname === 'iframe.mediadelivery.net' && window.location.pathname === '/play');
   const isIframeMediaPagePartial = (window.location.hostname.includes('mediadelivery.net') && window.location.pathname.includes('/play'));
-  
+
   console.log('Howl-faptap:  路径以/v/开头: ' + isVideoPage);
   console.log('Howl-faptap:  是否为iframe.mediadelivery.net/play: ' + isIframeMediaPage);
   console.log('Howl-faptap:  是否包含mediadelivery.net和play: ' + isIframeMediaPagePartial);
-  
+
   // 检查当前是否在视频页面或新的iframe播放页面
   if (isVideoPage || isIframeMediaPagePartial) {
     console.log('Howl-faptap:  在视频页面或iframe播放页面，初始化扩展');
@@ -971,7 +1079,7 @@ const observer = new MutationObserver((mutations) => {
     // 如果切换到视频页面或iframe播放页面，重新初始化
     const isVideoPage = window.location.pathname.startsWith('/v/');
     const isIframeMediaPagePartial = (window.location.hostname.includes('mediadelivery.net') && window.location.pathname.includes('/play'));
-    
+
     if (isVideoPage || isIframeMediaPagePartial) {
       console.log('Howl-faptap:  切换到视频页面或iframe播放页面，重新初始化扩展');
       initializeExtension();
@@ -1048,4 +1156,14 @@ window.addEventListener('beforeunload', () => {
     clearTimeout(initTimer);
     initTimer = null;
   }
+});
+
+// 监听来自popup/background的重试监听消息
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'retry_listening') {
+    console.log('Howl-faptap: 收到重试监听请求，重新初始化扩展');
+    initializeExtension();
+    sendResponse({ success: true });
+  }
+  return true;
 });
