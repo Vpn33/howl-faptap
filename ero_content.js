@@ -37,89 +37,101 @@ function waitForElement(selector, callback, timeout = 10000) {
 }
 
 initInject = () => {
-    waitForElement('.cooked a[download$=".funscript"].funscript-link-container, .cooked a[href$=".funscript"].funscript-link-container', async (titleElements) => {
-        // 循环处理每个DOM元素
-        const funscripts = [];
-        for (const titleElement of titleElements) {
-            const title = titleElement.querySelector('a').textContent.trim();
-
-            console.log('Howl-faptap:  检测到脚本链接:', titleElement.href, '脚本名称:', title);
-            try {
-                const funscript = await getFunscript(titleElement.href);
-
-                // 设置脚本标题
-                if (!funscript.metadata) {
-                    funscript.metadata = {};
-                }
-                if (!funscript.metadata.title || funscript.metadata.title !== title) {
-                    funscript.metadata.title = title;
-                }
-                console.log('Howl-faptap:  脚本内容:', funscript);
-                // 缓存funscript数据到chrome.storage.local，以便popup页面可以访问
-                try {
-                    funscripts.push(funscript);
-                } catch (cacheError) {
-                    console.log('Howl-faptap: 缓存funscript数据失败:', cacheError);
-                }
-            } catch (error) {
-                console.log('Howl-faptap: 获取Funscript数据失败:', error);
-            }
-        }
-        // 获取现有缓存数据并合并
-        chrome.storage.local.get(['cached_funscripts'], (result) => {
-            const existingFunscripts = result.cached_funscripts || [];
-            
-            // 获取配置以检查最大缓存数量
-            chrome.storage.sync.get(['maxCachedScripts'], configResult => {
-                const maxCachedScripts = configResult.maxCachedScripts || 10;
-                
-                // 合并新获取的Funscript和现有数据，避免重复
-                const updatedFunscripts = [...existingFunscripts];
-                for (const newFunscript of funscripts) {
-                    const existingIndex = updatedFunscripts.findIndex(funscript => {
-                        return funscript.metadata?.title === newFunscript.metadata?.title;
-                    });
-                    if (existingIndex === -1) {
-                        updatedFunscripts.push(newFunscript);
-                        
-                        // 检查是否超过最大缓存数量
-                        if (updatedFunscripts.length > maxCachedScripts) {
-                            // 移除最旧的脚本（数组中的第一个）
-                            updatedFunscripts.shift();
-                        }
-                    } else {
-                        // 如果标题相同，更新现有数据
-                        updatedFunscripts[existingIndex] = newFunscript;
-                    }
-                }
-                
-                // 保存更新后的数组
-                chrome.storage.local.set({
-                    'cached_funscripts': updatedFunscripts
-                }, () => {
-                    console.log('Howl-faptap: Funscript数据已缓存到本地存储');
-                });
+    // 等待所有脚本链接加载完成
+    waitForElement('.cooked a.funscript-link-container', async (titleElements) => {
+        // 如果是合并后的脚本链接，等待合并后的链接加载完成
+        if (titleElements.length > 2) {
+            waitForElement('a.funscript-link-container.funscript-link-merged', async (elems) => {
+                 analyzeElements(elems);
             });
-        });
-        
-        // 向background发送funscript数据
-        if (funscripts.length == 1) {
-            try {
-                sendMessageToBackground('load_funscript', {
-                    title: funscripts[0].metadata.title,
-                    funscriptContent: JSON.stringify(funscripts[0])
-                }).then(response => {
-                    if (response.success) {
-                        console.log('Howl-faptap:  Funscript加载成功');
-                    } else {
-                        console.log('Howl-faptap:  Funscript加载失败:', response.error || '未知错误');
-                    }
-                });
-            } catch (sendError) {
-                console.log('Howl-faptap: 发送Funscript数据失败:', sendError);
-            }
+        } else {
+            analyzeElements(titleElements);
         }
     });
+}
+async function analyzeElements(titleElements) {
+    // 循环处理每个DOM元素
+    const funscripts = [];
+
+    for (const titleElement of titleElements) {
+        const title = titleElement.querySelector('a').textContent.trim();
+
+        console.log('Howl-faptap:  检测到脚本链接:', titleElement.href, '脚本名称:', title);
+        try {
+            const funscript = await getFunscript(titleElement.href);
+
+            // 设置脚本标题
+            if (!funscript.metadata) {
+                funscript.metadata = {};
+            }
+            if (!funscript.metadata.title || funscript.metadata.title !== title) {
+                funscript.metadata.title = title;
+            }
+            console.log('Howl-faptap:  脚本内容:', funscript);
+            // 缓存funscript数据到chrome.storage.local，以便popup页面可以访问
+            try {
+                funscripts.push(funscript);
+            } catch (cacheError) {
+                console.log('Howl-faptap: 缓存funscript数据失败:', cacheError);
+            }
+        } catch (error) {
+            console.log('Howl-faptap: 获取Funscript数据失败:', error);
+        }
+    }
+    // 获取现有缓存数据并合并
+    chrome.storage.local.get(['cached_funscripts'], (result) => {
+        const existingFunscripts = result.cached_funscripts || [];
+
+        // 获取配置以检查最大缓存数量
+        chrome.storage.sync.get(['maxCachedScripts'], configResult => {
+            const maxCachedScripts = configResult.maxCachedScripts || 10;
+
+            // 合并新获取的Funscript和现有数据，避免重复
+            const updatedFunscripts = [...existingFunscripts];
+            for (const newFunscript of funscripts) {
+                const existingIndex = updatedFunscripts.findIndex(funscript => {
+                    return funscript.metadata?.title === newFunscript.metadata?.title;
+                });
+                if (existingIndex === -1) {
+                    updatedFunscripts.push(newFunscript);
+
+                    // 检查是否超过最大缓存数量
+                    if (updatedFunscripts.length > maxCachedScripts) {
+                        // 移除最旧的脚本（数组中的第一个）
+                        updatedFunscripts.shift();
+                    }
+                } else {
+                    // 如果标题相同，更新现有数据
+                    updatedFunscripts[existingIndex] = newFunscript;
+                }
+            }
+
+            // 保存更新后的数组
+            chrome.storage.local.set({
+                'cached_funscripts': updatedFunscripts
+            }, () => {
+                console.log('Howl-faptap: Funscript数据已缓存到本地存储');
+            });
+        });
+    });
+
+    // 向background发送funscript数据
+    if (funscripts.length == 1) {
+        try {
+            sendMessageToBackground('load_funscript', {
+                title: funscripts[0].metadata.title,
+                funscriptContent: JSON.stringify(funscripts[0])
+            }).then(response => {
+                if (response.success) {
+                    console.log('Howl-faptap:  Funscript加载成功');
+                } else {
+                    console.log('Howl-faptap:  Funscript加载失败:', response.error || '未知错误');
+                }
+            });
+        } catch (sendError) {
+            console.log('Howl-faptap: 发送Funscript数据失败:', sendError);
+        }
+    }
 }
 // 发送消息到background脚本
 function sendMessageToBackground(action, data = {}) {
@@ -151,10 +163,10 @@ initializeExtension();
 
 // 监听来自popup/background的重试监听消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'retry_listening') {
-    console.log('Howl-faptap: 收到重试监听请求，重新初始化扩展');
-    initializeExtension();
-    sendResponse({ success: true });
-  }
-  return true;
+    if (message.action === 'retry_listening') {
+        console.log('Howl-faptap: 收到重试监听请求，重新初始化扩展');
+        initializeExtension();
+        sendResponse({ success: true });
+    }
+    return true;
 });
