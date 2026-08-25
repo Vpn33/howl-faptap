@@ -220,11 +220,11 @@ function loadCachedFunscript() {
             chrome.storage.local.set({ 'selected_funscript_title': selectedTitle }, () => {
               console.log('Howl-faptap: 已保存选中的funscript标题到localStorage:', selectedTitle);
             });
-            
+
             // 发送消息到background.js，更新选中状态
-            chrome.runtime.sendMessage({ 
-              action: 'update_funscript_selection', 
-              funscriptTitle: selectedTitle 
+            chrome.runtime.sendMessage({
+              action: 'update_funscript_selection',
+              funscriptTitle: selectedTitle
             }, (response) => {
               // 忽略连接错误，因为background.js应该始终运行
               if (chrome.runtime.lastError) {
@@ -564,7 +564,7 @@ function clearAllCache() {
   });
 }
 
-function faptapSearch(){
+function faptapSearch() {
   // 获取选中的脚本索引
   const selectedRadio = document.querySelector('input[name="funscriptSelect"]:checked');
   if (!selectedRadio) {
@@ -576,7 +576,7 @@ function faptapSearch(){
     const funscripts = result.cached_funscripts || [];
 
     const index = parseInt(selectedRadio.value);
-    if(index < 0 || index >= funscripts.length){
+    if (index < 0 || index >= funscripts.length) {
       return;
     }
 
@@ -606,7 +606,7 @@ function pornSearch() {
     const funscripts = result.cached_funscripts || [];
 
     const index = parseInt(selectedRadio.value);
-    if(index < 0 || index >= funscripts.length){
+    if (index < 0 || index >= funscripts.length) {
       return;
     }
 
@@ -626,7 +626,7 @@ function pornSearch() {
 
 // XVideos搜索
 function xvideosSearch() {
-// 获取选中的脚本索引
+  // 获取选中的脚本索引
   const selectedRadio = document.querySelector('input[name="funscriptSelect"]:checked');
   if (!selectedRadio) {
     showStatus('请先选择一个脚本', true);
@@ -637,7 +637,7 @@ function xvideosSearch() {
     const funscripts = result.cached_funscripts || [];
 
     const index = parseInt(selectedRadio.value);
-    if(index < 0 || index >= funscripts.length){
+    if (index < 0 || index >= funscripts.length) {
       return;
     }
 
@@ -686,7 +686,7 @@ function downloadFunscript() {
         const title = cachedFunscript.metadata?.title || '下载的Funscript';
 
         // 按照content.js中JSON属性的顺序，重新构建一个顺序正确的变量
-        const standardFunscript = {
+        const standardFunscript = Object.assign({
           metadata: {
             title: cachedFunscript.metadata?.title || '',
             description: cachedFunscript.metadata?.description || '',
@@ -698,12 +698,17 @@ function downloadFunscript() {
             creator: cachedFunscript.metadata?.creator || 'unknown'
           },
           actions: cachedFunscript.actions || []
-        };
+        }, cachedFunscript);
 
         // 创建下载链接
         const scriptLink = document.createElement('a');
         scriptLink.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(standardFunscript));
-        scriptLink.download = `${title}.funscript`;
+        if (title.endsWith('.funscript')) {
+          scriptLink.download = `${title}`;
+        } else {
+          scriptLink.download = `${title}.funscript`;
+        }
+
         document.body.appendChild(scriptLink);
 
         // 触发下载
@@ -764,7 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('faptapButton').addEventListener('click', faptapSearch);
   document.getElementById('pornButton').addEventListener('click', pornSearch);
   document.getElementById('xvideosButton').addEventListener('click', xvideosSearch);
-  
+
   // 为跳转位置输入框添加回车支持
   document.getElementById('seekPosition').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
