@@ -178,13 +178,20 @@ function saveConfig() {
 
 // 加载缓存的 funscript 并更新 UI
 function loadCachedFunscript() {
+  console.log('Howl-faptap: 开始加载缓存 Funscript...');
   chrome.storage.local.get(['cached_funscripts'], (result) => {
     const tableBody = document.getElementById('funscriptTableBody');
     const loadButton = document.getElementById('loadFunscriptButton');
     const clearButton = document.getElementById('clearCacheButton');
     const downloadButton = document.getElementById('downloadFunscriptButton');
 
+    if (!tableBody) {
+      console.error('Howl-faptap: 找不到 funscriptTableBody 元素');
+      return;
+    }
+
     const funscripts = result.cached_funscripts || [];
+    console.log('Howl-faptap: 加载到的 Funscript 数量:', funscripts.length);
 
     // 清空表格内容
     tableBody.innerHTML = '';
@@ -297,6 +304,7 @@ function loadCachedFunscript() {
 
     // 保存到全局变量以便其他函数使用
     window.cachedFunscripts = funscripts;
+    console.log('Howl-faptap: Funscript 加载完成，保存了', funscripts.length, '个脚本');
 
     // 从 localStorage 中读取保存的选中脚本标题
     chrome.storage.local.get(['selected_funscript_title'], (result) => {
@@ -747,6 +755,101 @@ function toggleListenerForm() {
   }
 }
 
+function exportListenersToJSON() {
+  chrome.storage.local.get(['listeners'], (result) => {
+    const listeners = result.listeners || [];
+
+    if (listeners.length === 0) {
+      showStatus('没有可导出的监听器', true);
+      return;
+    }
+
+    // 准备导出数据
+    const exportData = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      listeners: listeners
+    };
+
+    // 将数据转换为 JSON 字符串
+    const jsonString = JSON.stringify(exportData, null, 2);
+
+    // 创建下载链接
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `howl-listeners-${new Date().toISOString().slice(0, 10)}.json`;
+
+    document.body.appendChild(link);
+    link.click();
+
+    // 清理
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showStatus(`已导出 ${listeners.length} 个监听器`);
+  });
+}
+
+function importListenersFromJSON(file) {
+  chrome.storage.local.get(['listeners'], (result) => {
+    const currentListeners = result.listeners || [];
+
+    if (!file) {
+      showStatus('请选择 JSON 文件', true);
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+      try {
+        const jsonData = JSON.parse(e.target.result);
+
+        // 验证数据结构
+        if (!jsonData.listeners || !Array.isArray(jsonData.listeners)) {
+          throw new Error('无效的 JSON 格式：缺少 listeners 数组');
+        }
+
+        const importedListeners = jsonData.listeners;
+        const mergedListeners = [];
+        const urlSet = new Set(currentListeners.map(l => l.url));
+
+        for (const listener of importedListeners) {
+          if (listener.url && !urlSet.has(listener.url)) {
+            // 没有重复的 URL，直接添加
+            mergedListeners.push(listener);
+          } else if (listener.url) {
+            // 有重复，询问用户是否覆盖
+            const confirmOverwrite = confirm(`监听器"${listener.url}"已存在，是否覆盖？`);
+            if (confirmOverwrite) {
+              // 使用导入的数据覆盖原有数据
+              mergedListeners.push(listener);
+            }
+          }
+        }
+
+        // 用导入的监听器替换原有的（保持导入的顺序）
+        chrome.storage.local.set({ listeners: mergedListeners }, () => {
+          showStatus(`成功导入 ${mergedListeners.length} 个监听器`);
+          renderListenerTable(mergedListeners);
+        });
+
+      } catch (error) {
+        console.error('导入 JSON 失败:', error);
+        showStatus('导入失败：' + error.message, true);
+      }
+    };
+
+    reader.onerror = function() {
+      showStatus('读取文件失败', true);
+    };
+
+    reader.readAsText(file);
+  });
+}
+
 function saveListener() {
   // 获取表单数据
   const urlInput = document.getElementById('listenerUrl');
@@ -833,8 +936,12 @@ function deleteListener(url) {
 
 function renderListenerTable(listeners) {
   const tbody = document.getElementById('listenerTableBody');
-  if (!tbody) return;
+  if (!tbody) {
+    console.error('Howl-faptap: 找不到 listenerTableBody 元素');
+    return;
+  }
 
+  console.log('Howl-faptap: 开始渲染监听器表格，数量:', listeners.length);
   tbody.innerHTML = '';
 
   if (listeners.length === 0) {
@@ -890,6 +997,8 @@ function renderListenerTable(listeners) {
 
 // 在 DOMContentLoaded 中添加缓存清理逻辑
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('Howl-faptap: DOMContentLoaded 触发');
+  
   // 首先清理可能存在的无效缓存
   try {
     const cachedConfig = localStorage.getItem('howl_faptap_config');
@@ -907,7 +1016,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 然后再加载配置
+  console.log('Howl-faptap: 开始加载配置...');
   loadConfig();
+  console.log('Howl-faptap: 配置加载完成，开始加载 Funscript...');
   loadCachedFunscript();
 
   document.getElementById('saveButton').addEventListener('click', saveConfig);
@@ -986,10 +1097,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 监听器管理按钮事件绑定
+  // 监听器管理按钮事件绑定（所有按钮）
   const addListenerButton = document.getElementById('addListenerButton');
   const saveListenerButton = document.getElementById('saveListenerButton');
   const cancelListenerButton = document.getElementById('cancelListenerButton');
+  const exportJsonButton = document.getElementById('exportJsonButton');
+  const importJsonButton = document.getElementById('importJsonButton');
+  const importJsonFile = document.getElementById('importJsonFile');
 
   if (addListenerButton) {
     addListenerButton.addEventListener('click', toggleListenerForm);
@@ -1002,9 +1116,33 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cancelListenerButton) {
     cancelListenerButton.addEventListener('click', toggleListenerForm);
   }
+  
+  if (exportJsonButton) {
+    exportJsonButton.addEventListener('click', exportListenersToJSON);
+  }
+  
+  if (importJsonButton) {
+    importJsonButton.addEventListener('click', () => {
+      importJsonFile.click();
+    });
+  }
+  
+  if (importJsonFile) {
+    importJsonFile.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        importListenersFromJSON(file);
+        // 清空 input，允许重复导入同一文件
+        importJsonFile.value = '';
+      }
+    });
+  }
 
   // 加载监听器列表
+  console.log('Howl-faptap: 开始加载监听器列表...');
   chrome.storage.local.get(['listeners'], (result) => {
-    renderListenerTable(result.listeners || []);
+    const listeners = result.listeners || [];
+    console.log('Howl-faptap: 加载到的监听器数量:', listeners.length);
+    renderListenerTable(listeners);
   });
 });

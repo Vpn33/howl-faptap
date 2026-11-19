@@ -359,7 +359,12 @@
 
   <div class="section">
     <h3>监听器管理:</h3>
-    <button id="addListenerButton" class="blue-button">新增监听器</button>
+    <div class="inline-container">
+      <button id="addListenerButton" class="blue-button">新增监听器</button>
+      <button id="exportJsonButton" class="green-button" title="导出监听器配置">导出 JSON</button>
+      <input type="file" id="importJsonFile" style="display: none;" accept=".json">
+      <button id="importJsonButton" class="blue-button" title="导入监听器配置">导入 JSON</button>
+    </div>
 
     <div id="listenerFormContainer" style="display: none; margin-top: 15px;">
       <div class="form-group">
