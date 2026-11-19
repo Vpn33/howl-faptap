@@ -5,7 +5,7 @@ function showStatus(message, isError = false) {
   statusElement.className = 'status-message ' + (isError ? 'error' : 'success');
   statusElement.style.display = 'block';
 
-  // 3秒后隐藏消息
+  // 3 秒后隐藏消息
   setTimeout(() => {
     statusElement.style.display = 'none';
   }, 3000);
@@ -13,15 +13,15 @@ function showStatus(message, isError = false) {
 
 // 加载当前配置
 function loadConfig() {
-  // 1. 先从localStorage读取缓存的配置
+  // 1. 先从 localStorage 读取缓存的配置
   const cachedConfig = localStorage.getItem('howl_faptap_config');
   if (cachedConfig) {
     try {
       const config = JSON.parse(cachedConfig);
-      // 验证serverAddress是否有效
+      // 验证 serverAddress 是否有效
       let serverAddress = 'http://127.0.0.1'; // 默认值
 
-      // 只在serverAddress有效且不包含undefined时使用
+      // 只在 serverAddress 有效且不包含 undefined 时使用
       if (config.serverAddress && typeof config.serverAddress === 'string' && !config.serverAddress.includes('undefined')) {
         serverAddress = config.serverAddress;
       } else if (config.serverIp && typeof config.serverIp === 'string' && config.serverIp !== 'undefined') {
@@ -38,11 +38,11 @@ function loadConfig() {
       return; // 已加载缓存，直接返回
     } catch (error) {
       console.log('Howl-faptap: 解析缓存配置失败:', error);
-      // 解析失败，继续尝试从background获取
+      // 解析失败，继续尝试从 background 获取
     }
   }
 
-  // 2. 从background.js获取配置
+  // 2. 从 background.js 获取配置
   chrome.runtime.sendMessage({ action: 'get_config' }, (response) => {
     try {
       // 兼容两种可能的响应格式
@@ -84,9 +84,9 @@ function loadConfig() {
 // 保存到本地缓存
 function saveToLocalCache(serverAddress, howlKey, howlEnabled, syncDelay, maxCachedScripts) {
   try {
-    // 验证serverAddress有效性
+    // 验证 serverAddress 有效性
     if (typeof serverAddress !== 'string' || serverAddress.includes('undefined')) {
-      console.log('Howl-faptap: 尝试保存无效的serverAddress，使用默认值');
+      console.log('Howl-faptap: 尝试保存无效的 serverAddress，使用默认值');
       serverAddress = 'http://127.0.0.1';
     }
 
@@ -118,9 +118,9 @@ function saveConfig() {
     return;
   }
 
-  // 验证maxCachedScripts
+  // 验证 maxCachedScripts
   if (isNaN(maxCachedScripts) || maxCachedScripts < 1 || maxCachedScripts > 50) {
-    showStatus('缓存脚本数量必须在1到50之间', true);
+    showStatus('缓存脚本数量必须在 1 到 50 之间', true);
     return;
   }
 
@@ -130,11 +130,11 @@ function saveConfig() {
   }
 
 
-  // 验证URL格式
+  // 验证 URL 格式
   try {
     new URL(serverAddress);
   } catch {
-    showStatus('请输入有效的URL格式，例如 http://127.0.0.1', true);
+    showStatus('请输入有效的 URL 格式，例如 http://127.0.0.1', true);
     return;
   }
 
@@ -148,10 +148,10 @@ function saveConfig() {
     howlEnabled: howlEnabled,
     syncDelay: syncDelay,
     maxCachedScripts: maxCachedScripts,
-    action: 'update_config' // 包含action字段
+    action: 'update_config' // 包含 action 字段
   };
 
-  // 发送配置到background.js
+  // 发送配置到 background.js
   chrome.runtime.sendMessage(config, (response) => {
     try {
       if (response && response.success) {
@@ -165,9 +165,9 @@ function saveConfig() {
               chrome.tabs.reload(tabs[0].id);
             }
           });
-        }, 300); // 300ms延迟，给存储操作足够时间
+        }, 300); // 300ms 延迟，给存储操作足够时间
       } else {
-        showStatus('配置保存失败: ' + (response?.error || '未知错误'), true);
+        showStatus('配置保存失败：' + (response?.error || '未知错误'), true);
       }
     } catch (error) {
       console.log('Howl-faptap: 保存配置响应处理失败:', error);
@@ -176,7 +176,7 @@ function saveConfig() {
   });
 }
 
-// 加载缓存的funscript并更新UI
+// 加载缓存的 funscript 并更新 UI
 function loadCachedFunscript() {
   chrome.storage.local.get(['cached_funscripts'], (result) => {
     const tableBody = document.getElementById('funscriptTableBody');
@@ -208,27 +208,27 @@ function loadCachedFunscript() {
         // 如果只有一个元素，默认选中
         if (funscripts.length === 1) {
           radio.checked = true;
-          // 保存到localStorage
+          // 保存到 localStorage
           chrome.storage.local.set({ 'selected_funscript_title': funscript.metadata?.title || '未命名' });
         }
 
-        // 添加onchange事件监听器，当选中时保存到localStorage并通知background
+        // 添加 onchange 事件监听器，当选中时保存到 localStorage 并通知 background
         radio.addEventListener('change', () => {
           if (radio.checked) {
-            // 保存选中的funscript标题到localStorage
+            // 保存选中的 funscript 标题到 localStorage
             const selectedTitle = funscript.metadata?.title || '未命名';
             chrome.storage.local.set({ 'selected_funscript_title': selectedTitle }, () => {
-              console.log('Howl-faptap: 已保存选中的funscript标题到localStorage:', selectedTitle);
+              console.log('Howl-faptap: 已保存选中的 funscript 标题到 localStorage:', selectedTitle);
             });
 
-            // 发送消息到background.js，更新选中状态
+            // 发送消息到 background.js，更新选中状态
             chrome.runtime.sendMessage({
               action: 'update_funscript_selection',
               funscriptTitle: selectedTitle
             }, (response) => {
-              // 忽略连接错误，因为background.js应该始终运行
+              // 忽略连接错误，因为 background.js 应该始终运行
               if (chrome.runtime.lastError) {
-                console.log('Howl-faptap: 发送消息到background.js失败:', chrome.runtime.lastError.message);
+                console.log('Howl-faptap: 发送消息到 background.js 失败:', chrome.runtime.lastError.message);
               }
             });
           }
@@ -243,6 +243,8 @@ function loadCachedFunscript() {
         titleCell.textContent = funscript.metadata?.title || '未命名';
         row.appendChild(titleCell);
 
+
+ 
 
 
         // 动作数量列
@@ -273,7 +275,7 @@ function loadCachedFunscript() {
       clearButton.disabled = false;
       downloadButton.disabled = false;
 
-      // 如果只有一个元素，默认调用load_funscript
+      // 如果只有一个元素，默认调用 load_funscript
       if (funscripts.length === 1) {
         loadFunscriptToHowl();
       }
@@ -283,7 +285,7 @@ function loadCachedFunscript() {
       const emptyCell = document.createElement('td');
       emptyCell.colSpan = 4;
       emptyCell.className = 'funscript-table-empty';
-      emptyCell.textContent = '没有缓存的Funscript';
+      emptyCell.textContent = '没有缓存的 Funscript';
       row.appendChild(emptyCell);
       tableBody.appendChild(row);
 
@@ -296,9 +298,9 @@ function loadCachedFunscript() {
     // 保存到全局变量以便其他函数使用
     window.cachedFunscripts = funscripts;
 
-    // 从localStorage中读取保存的选中脚本标题
+    // 从 localStorage 中读取保存的选中脚本标题
     chrome.storage.local.get(['selected_funscript_title'], (result) => {
-      console.log('Howl-faptap: 从localStorage读取选中脚本标题:', result.selected_funscript_title);
+      console.log('Howl-faptap: 从 localStorage 读取选中脚本标题:', result.selected_funscript_title);
       const selectedTitle = result.selected_funscript_title;
 
       if (selectedTitle && funscripts.length > 0) {
@@ -314,7 +316,7 @@ function loadCachedFunscript() {
             const radio = row.querySelector('input[type="radio"]');
             if (radio) {
               radio.checked = true;
-              console.log('Howl-faptap: 从localStorage恢复选中状态:', selectedTitle);
+              console.log('Howl-faptap: 从 localStorage 恢复选中状态:', selectedTitle);
             }
           }
         });
@@ -323,7 +325,7 @@ function loadCachedFunscript() {
   });
 }
 
-// 格式化时长为HH:MM:SS.mmm格式，小时为00和毫秒为000时省略显示
+// 格式化时长为 HH:MM:SS.mmm 格式，小时为 00 和毫秒为 000 时省略显示
 function formatDuration(seconds) {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
@@ -332,7 +334,7 @@ function formatDuration(seconds) {
 
   let result = '';
 
-  // 处理小时部分，不为0时显示
+  // 处理小时部分，不为 0 时显示
   if (hours > 0) {
     result += `${hours.toString().padStart(2, '0')}:`;
   }
@@ -345,7 +347,7 @@ function formatDuration(seconds) {
   // 处理秒部分，始终显示
   result += `${secs.toString().padStart(2, '0')}`;
 
-  // // 处理毫秒部分，不为0时显示
+  // // 处理毫秒部分，不为 0 时显示
   // if (milliseconds > 0) {
   //   result += `.${milliseconds.toString().padStart(3, '0')}`;
   // }
@@ -353,7 +355,7 @@ function formatDuration(seconds) {
   return result;
 }
 
-// 监听来自background的消息，更新Funscript选中状态
+// 监听来自 background 的消息，更新 Funscript 选中状态
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'update_funscript_selection_forpop') {
     const funscriptTitle = message.funscriptTitle;
@@ -363,7 +365,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const titleElement = radio.closest('tr').querySelector('td:nth-child(2)');
       if (titleElement && titleElement.textContent === funscriptTitle) {
         radio.checked = true;
-        console.log('Howl-faptap: 自动选中Funscript:', funscriptTitle);
+        console.log('Howl-faptap: 自动选中 Funscript:', funscriptTitle);
       }
     });
   }
@@ -373,10 +375,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 function startPlayer() {
   showStatus('正在启动播放器...');
 
-  // 获取syncDelay值
+  // 获取 syncDelay 值
   const syncDelay = parseInt(document.getElementById('syncDelay').value) || 0;
 
-  // 获取position值，与seek功能使用相同的输入框
+  // 获取 position 值，与 seek 功能使用相同的输入框
   const positionInput = document.getElementById('seekPosition');
   const position = parseFloat(positionInput.value);
 
@@ -384,7 +386,7 @@ function startPlayer() {
     // 准备消息对象
     const message = { action: 'start_player' };
 
-    // 如果position不为空且大于0，则添加from参数
+    // 如果 position 不为空且大于 0，则添加 from 参数
     if (!isNaN(position) && position > 0) {
       message.from = position;
     }
@@ -394,7 +396,7 @@ function startPlayer() {
         if (response && response.success) {
           showStatus('播放器启动成功');
         } else {
-          showStatus('播放器启动失败: ' + (response?.error || '未知错误'), true);
+          showStatus('播放器启动失败：' + (response?.error || '未知错误'), true);
         }
       } catch (error) {
         console.log('Howl-faptap: 启动播放器响应处理失败:', error);
@@ -403,7 +405,7 @@ function startPlayer() {
     });
   };
 
-  // 如果syncDelay大于0，则添加延迟
+  // 如果 syncDelay 大于 0，则添加延迟
   if (syncDelay > 0) {
     setTimeout(sendStartPlayerMessage, syncDelay);
   } else {
@@ -420,7 +422,7 @@ function stopPlayer() {
       if (response && response.success) {
         showStatus('播放器停止成功');
       } else {
-        showStatus('播放器停止失败: ' + (response?.error || '未知错误'), true);
+        showStatus('播放器停止失败：' + (response?.error || '未知错误'), true);
       }
     } catch (error) {
       console.log('Howl-faptap: 停止播放器响应处理失败:', error);
@@ -429,7 +431,7 @@ function stopPlayer() {
   });
 }
 
-// 重试监听 - 不刷新页面重新初始化content脚本
+// 重试监听 - 不刷新页面重新初始化 content 脚本
 function retryListening() {
   showStatus('正在重试监听...');
 
@@ -438,7 +440,7 @@ function retryListening() {
       if (response && response.success) {
         showStatus('重试监听成功');
       } else {
-        showStatus('重试监听失败: ' + (response?.error || '未知错误'), true);
+        showStatus('重试监听失败：' + (response?.error || '未知错误'), true);
       }
     } catch (error) {
       console.log('Howl-faptap: 重试监听响应处理失败:', error);
@@ -453,13 +455,13 @@ function seekToPosition() {
   const position = parseFloat(positionInput.value);
 
   if (isNaN(position) || position < 0) {
-    showStatus('请输入有效的跳转位置（大于等于0的数字）', true);
+    showStatus('请输入有效的跳转位置（大于等于 0 的数字）', true);
     return;
   }
 
   showStatus('正在跳转播放位置...');
 
-  // 获取syncDelay值
+  // 获取 syncDelay 值
   const syncDelay = parseInt(document.getElementById('syncDelay').value) || 0;
 
   const sendSeekMessage = () => {
@@ -471,7 +473,7 @@ function seekToPosition() {
         if (response && response.success) {
           showStatus(`已成功跳转到 ${position} 秒`);
         } else {
-          showStatus('跳转播放位置失败: ' + (response?.error || '未知错误'), true);
+          showStatus('跳转播放位置失败：' + (response?.error || '未知错误'), true);
         }
       } catch (error) {
         console.log('Howl-faptap: 跳转播放位置响应处理失败:', error);
@@ -480,7 +482,7 @@ function seekToPosition() {
     });
   };
 
-  // 如果syncDelay大于0，则添加延迟
+  // 如果 syncDelay 大于 0，则添加延迟
   if (syncDelay > 0) {
     setTimeout(sendSeekMessage, syncDelay);
   } else {
@@ -488,7 +490,7 @@ function seekToPosition() {
   }
 }
 
-// 加载funscript到Howl服务器
+// 加载 funscript 到 Howl 服务器
 function loadFunscriptToHowl() {
   // 获取选中的脚本索引
   const selectedRadio = document.querySelector('input[name="funscriptSelect"]:checked');
@@ -500,32 +502,32 @@ function loadFunscriptToHowl() {
     const funscripts = result.cached_funscripts || [];
 
     if (funscripts.length === 0) {
-      showStatus('没有缓存的Funscript数据', true);
+      showStatus('没有缓存的 Funscript 数据', true);
       return;
     }
 
     const index = parseInt(selectedRadio.value);
     const funscript = funscripts[index];
 
-    showStatus('正在加载Funscript到Howl服务器...');
+    showStatus('正在加载 Funscript 到 Howl 服务器...');
 
-    // 向background发送load_funscript请求
-    // 将funscript对象转换为JSON字符串，与content.js中的格式保持一致
+    // 向 background 发送 load_funscript 请求
+    // 将 funscript 对象转换为 JSON 字符串，与 content.js 中的格式保持一致
     chrome.runtime.sendMessage({
       action: 'load_funscript',
-      title: funscript.metadata?.title || '缓存的Funscript',
+      title: funscript.metadata?.title || '缓存的 Funscript',
       funscriptContent: JSON.stringify(funscript)
     }, (response) => {
       if (response && response.success) {
-        showStatus('Funscript加载成功');
+        showStatus('Funscript 加载成功');
       } else {
-        showStatus('Funscript加载失败: ' + (response?.error || '未知错误'), true);
+        showStatus('Funscript 加载失败：' + (response?.error || '未知错误'), true);
       }
     });
   });
 }
 
-// 清除选中的funscript数据
+// 清除选中的 funscript 数据
 function clearCache() {
   // 获取选中的脚本索引
   const selectedRadio = document.querySelector('input[name="funscriptSelect"]:checked');
@@ -543,7 +545,7 @@ function clearCache() {
 
     // 更新本地存储
     chrome.storage.local.set({ cached_funscripts: funscripts }, () => {
-      // 更新UI
+      // 更新 UI
       loadCachedFunscript();
 
       // 显示成功消息
@@ -552,11 +554,11 @@ function clearCache() {
   });
 }
 
-// 清除全部缓存的funscript数据
+// 清除全部缓存的 funscript 数据
 function clearAllCache() {
-  // 清除本地存储中的funscript数据
+  // 清除本地存储中的 funscript 数据
   chrome.storage.local.remove(['cached_funscripts'], () => {
-    // 更新UI显示
+    // 更新 UI 显示
     loadCachedFunscript();
 
     // 显示成功消息
@@ -624,7 +626,6 @@ function pornSearch() {
   });
 }
 
-// XVideos搜索
 function xvideosSearch() {
   // 获取选中的脚本索引
   const selectedRadio = document.querySelector('input[name="funscriptSelect"]:checked');
@@ -655,17 +656,17 @@ function xvideosSearch() {
   });
 }
 
-// 处理标题：非英文和数字的符号替换为[+]
+// 处理标题：非英文和数字的符号替换为 [+]
 function processTitle(title) {
-  // 只替换空白字符和符号（保留中文）为+号
+  // 只替换空白字符和符号（保留中文）为 + 号
   // 中文字符范围：\u4e00-\u9fa5
   let processed = title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '+');
-  // 将连续的+号替换为单个+号
+  // 将连续的 + 号替换为单个 + 号
   processed = processed.replace(/\++/g, '+');
   return processed;
 }
 
-// 下载Funscript文件
+// 下载 Funscript 文件
 function downloadFunscript() {
   // 获取选中的脚本索引
   const selectedRadio = document.querySelector('input[name="funscriptSelect"]:checked');
@@ -674,18 +675,18 @@ function downloadFunscript() {
     return;
   }
   try {
-    console.log('Howl-faptap: 开始下载Funscript...');
+    console.log('Howl-faptap: 开始下载 Funscript...');
 
-    // 从本地存储获取缓存的funscript数据
+    // 从本地存储获取缓存的 funscript 数据
     chrome.storage.local.get(['cached_funscripts'], (result) => {
       const funscripts = result.cached_funscripts || [];
       const index = parseInt(selectedRadio.value);
       const cachedFunscript = funscripts[index];
 
       if (cachedFunscript) {
-        const title = cachedFunscript.metadata?.title || '下载的Funscript';
+        const title = cachedFunscript.metadata?.title || '下载的 Funscript';
 
-        // 按照content.js中JSON属性的顺序，重新构建一个顺序正确的变量
+        // 按照 content.js 中 JSON 属性的顺序，重新构建一个顺序正确的变量
         const standardFunscript = Object.assign({
           metadata: {
             title: cachedFunscript.metadata?.title || '',
@@ -719,19 +720,175 @@ function downloadFunscript() {
           document.body.removeChild(scriptLink);
         }, 100);
 
-        console.log('Howl-faptap: Funscript下载已触发，文件名:', `${title}.funscript`);
+        console.log('Howl-faptap: Funscript 下载已触发，文件名:', `${title}.funscript`);
       } else {
-        console.log('Howl-faptap: 没有找到缓存的Funscript数据');
-        alert('没有找到可下载的Funscript数据');
+        console.log('Howl-faptap: 没有找到缓存的 Funscript 数据');
+        alert('没有找到可下载的 Funscript 数据');
       }
     });
   } catch (error) {
-    console.log('Howl-faptap: Funscript下载失败:', error);
-    alert('下载Funscript失败: ' + error.message);
+    console.log('Howl-faptap: Funscript 下载失败:', error);
+    alert('下载 Funscript 失败：' + error.message);
   }
 }
 
-// 在DOMContentLoaded中添加缓存清理逻辑
+// 防止 XSS 攻击的 HTML 转义函数
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// 监听器管理相关函数（移到外部，以便事件处理中使用）
+function toggleListenerForm() {
+  const form = document.getElementById('listenerFormContainer');
+  if (form) {
+    form.style.display = form.style.display === 'block' ? 'none' : 'block';
+  }
+}
+
+function saveListener() {
+  // 获取表单数据
+  const urlInput = document.getElementById('listenerUrl');
+  const titleSelectorInput = document.getElementById('listenerTitleSelector');
+  const videoSelectorInput = document.getElementById('listenerVideoSelector');
+
+  if (!urlInput || !titleSelectorInput || !videoSelectorInput) {
+    showStatus('表单元素不存在', true);
+    return;
+  }
+
+  const url = urlInput.value.trim();
+  const titleSelector = titleSelectorInput.value.trim();
+  const videoSelector = videoSelectorInput.value.trim();
+
+  // 验证必填字段
+  if (!url || !titleSelector || !videoSelector) {
+    showStatus('请填写所有字段', true);
+    return;
+  }
+
+  // 验证 URL 是否为有效的正则表达式
+  try {
+    new RegExp(url);
+  } catch (e) {
+    showStatus(`URL 不是有效的正则表达式：${e.message}`, true);
+    return;
+  }
+
+  // 从存储中获取现有的监听器列表
+  chrome.storage.local.get(['listeners'], (result) => {
+    const listeners = result.listeners || [];
+
+    // 检查是否已存在相同的 URL
+    const existingIndex = listeners.findIndex(l => l.url === url);
+
+    if (existingIndex >= 0) {
+      // 如果存在，询问是否覆盖
+      const confirmOverwrite = confirm(`已存在 URL 为"${url}"的监听器，是否覆盖？`);
+
+      if (confirmOverwrite) {
+        // 覆盖现有监听器
+        listeners[existingIndex] = { url, titleSelector, videoSelector };
+        showStatus('监听器已更新');
+      } else {
+        showStatus('已取消操作');
+        toggleListenerForm();
+        return;
+      }
+    } else {
+      // 添加新监听器
+      listeners.push({ url, titleSelector, videoSelector });
+      showStatus('监听器已添加');
+    }
+
+    // 保存回存储
+    chrome.storage.local.set({ listeners }, () => {
+      // 重新渲染列表
+      renderListenerTable(listeners);
+      toggleListenerForm();
+    });
+  });
+}
+
+function deleteListener(url) {
+  // 从存储中获取现有的监听器列表
+  chrome.storage.local.get(['listeners'], (result) => {
+    const listeners = result.listeners || [];
+
+    // 查找并删除匹配的监听器
+    const initialLength = listeners.length;
+    const filteredListeners = listeners.filter(l => l.url !== url);
+
+    if (filteredListeners.length < initialLength) {
+      // 成功删除
+      chrome.storage.local.set({ listeners: filteredListeners }, () => {
+        showStatus(`监听器"${url}"已删除`);
+        // 重新渲染列表
+        renderListenerTable(filteredListeners);
+      });
+    }
+  });
+}
+
+function renderListenerTable(listeners) {
+  const tbody = document.getElementById('listenerTableBody');
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+
+  if (listeners.length === 0) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 4;
+    cell.className = 'funscript-table-empty';
+    cell.textContent = '暂无监听器';
+    row.appendChild(cell);
+    tbody.appendChild(row);
+    return;
+  }
+
+  // 从后往前渲染，使最新的监听器显示在顶部
+  for (let i = listeners.length - 1; i >= 0; i--) {
+    const listener = listeners[i];
+    const row = document.createElement('tr');
+
+    // URL 列
+    const urlCell = document.createElement('td');
+    urlCell.className = 'funscript-table-cell';
+    urlCell.textContent = listener.url;
+    row.appendChild(urlCell);
+
+    // 标题选择器列
+    const titleSelectorCell = document.createElement('td');
+    titleSelectorCell.className = 'funscript-table-cell';
+    titleSelectorCell.textContent = listener.titleSelector;
+    row.appendChild(titleSelectorCell);
+
+    // 视频选择器列
+    const videoSelectorCell = document.createElement('td');
+    videoSelectorCell.className = 'funscript-table-cell';
+    videoSelectorCell.textContent = listener.videoSelector;
+    row.appendChild(videoSelectorCell);
+
+    // 动作列
+    const actionCell = document.createElement('td');
+    actionCell.className = 'funscript-table-cell';
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = '删除';
+    deleteBtn.className = 'red-button';
+    deleteBtn.style.padding = '4px 8px';
+    deleteBtn.style.margin = '0';
+    deleteBtn.style.fontSize = '12px';
+    deleteBtn.addEventListener('click', () => deleteListener(listener.url));
+    actionCell.appendChild(deleteBtn);
+    row.appendChild(actionCell);
+
+    tbody.appendChild(row);
+  }
+}
+
+// 在 DOMContentLoaded 中添加缓存清理逻辑
 document.addEventListener('DOMContentLoaded', () => {
   // 首先清理可能存在的无效缓存
   try {
@@ -777,22 +934,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 添加chrome.storage.local变更监听器，实时更新UI
+  // 添加 chrome.storage.local 变更监听器，实时更新 UI
   chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'local' && changes.cached_funscripts) {
       loadCachedFunscript();
     }
+    if (namespace === 'local' && changes.listeners) {
+      renderListenerTable(changes.listeners.newValue || []);
+    }
   });
 
-  // 添加消息监听器，处理来自background.js的消息
+  // 添加消息监听器，处理来自 background.js 的消息
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const { action } = message;
 
-    console.log('Howl-faptap: popup.js收到消息:', action);
+    console.log('Howl-faptap: popup.js 收到消息:', action);
 
     switch (action) {
       case 'update_funscript_selection':
-        // 更新选中的funscript
+        // 更新选中的 funscript
         const funscriptTitle = message.funscriptTitle;
         const funscriptTable = document.getElementById('funscriptTable');
         if (funscriptTable) {
@@ -809,11 +969,11 @@ document.addEventListener('DOMContentLoaded', () => {
         break;
 
       default:
-        console.log('Howl-faptap: popup.js收到未知消息:', action);
+        console.log('Howl-faptap: popup.js 收到未知消息:', action);
         break;
     }
 
-    // 告诉Chrome我们将异步发送响应
+    // 告诉 Chrome 我们将异步发送响应
     return true;
   });
 
@@ -824,5 +984,27 @@ document.addEventListener('DOMContentLoaded', () => {
         saveConfig();
       }
     });
+  });
+
+  // 监听器管理按钮事件绑定
+  const addListenerButton = document.getElementById('addListenerButton');
+  const saveListenerButton = document.getElementById('saveListenerButton');
+  const cancelListenerButton = document.getElementById('cancelListenerButton');
+
+  if (addListenerButton) {
+    addListenerButton.addEventListener('click', toggleListenerForm);
+  }
+  
+  if (saveListenerButton) {
+    saveListenerButton.addEventListener('click', saveListener);
+  }
+  
+  if (cancelListenerButton) {
+    cancelListenerButton.addEventListener('click', toggleListenerForm);
+  }
+
+  // 加载监听器列表
+  chrome.storage.local.get(['listeners'], (result) => {
+    renderListenerTable(result.listeners || []);
   });
 });

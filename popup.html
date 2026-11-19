@@ -41,7 +41,7 @@
     button:hover {
       opacity: 0.9;
     }
-    
+
     /* 按钮颜色样式 */
     #saveButton {
       width: 100%;
@@ -119,7 +119,7 @@
       cursor: not-allowed;
     }
 
-    /* Funscript表格样式 */
+    /* Funscript 表格样式 */
     .funscript-section {
       margin-top: 20px;
     }
@@ -269,14 +269,22 @@
     input:checked + .slider:before {
       transform: translateX(26px);
     }
+
+    /* 监听器表格样式 */
+    .listener-table-header {
+      max-width: 200px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   </style>
 </head>
 
 <body>
   <h2>Howl Faptap - V1.0.5</h2>
-  
+
   <div class="form-group">
-    <label for="howlEnabled">Howl服务:</label>
+    <label for="howlEnabled">Howl 服务:</label>
     <label class="switch">
       <input type="checkbox" id="howlEnabled" checked>
       <span class="slider"></span>
@@ -285,17 +293,17 @@
   </div>
 
   <div class="form-group">
-    <label for="serverAddress">Howl服务地址:</label>
-    <input type="text" id="serverAddress" placeholder="例如: http://127.0.0.1">
+    <label for="serverAddress">Howl 服务地址:</label>
+    <input type="text" id="serverAddress" placeholder="例如：http://127.0.0.1">
   </div>
 
   <div class="form-group">
-    <label for="howlKey">Howl服务密钥:</label>
+    <label for="howlKey">Howl 服务密钥:</label>
     <input type="text" id="howlKey" placeholder="输入服务密钥">
   </div>
 
   <div class="form-group">
-    <label for="syncDelay">同步延迟(毫秒):</label>
+    <label for="syncDelay">同步延迟 (毫秒):</label>
     <input type="number" id="syncDelay" value="0" min="0" max="5000">
   </div>
 
@@ -308,7 +316,7 @@
   <div id="statusMessage" class="status-message"></div>
 
   <div class="funscript-section">
-    <h3>缓存的Funscript:</h3>
+    <h3>缓存的 Funscript:</h3>
     <div id="funscriptTableContainer">
       <table id="funscriptTable" class="funscript-table">
         <thead>
@@ -321,7 +329,7 @@
         </thead>
         <tbody id="funscriptTableBody">
           <tr>
-            <td colspan="4" class="funscript-table-empty">无缓存的Funscript数据</td>
+            <td colspan="4" class="funscript-table-empty">无缓存的 Funscript 数据</td>
           </tr>
         </tbody>
       </table>
@@ -333,19 +341,62 @@
       <button id="clearAllCacheButton" class="red-button">清空脚本</button>
     </div>
     <div class="inline-container">
-      <button id="faptapButton" class="yellow-button">在FapTap搜索</button>
-      <button id="pornButton" class="green-button">在Porn搜索</button>
-      <button id="xvideosButton" class="blue-button">在XVideos搜索</button>
+      <button id="faptapButton" class="yellow-button">在 FapTap 搜索</button>
+      <button id="pornButton" class="green-button">在 Porn 搜索</button>
+      <button id="xvideosButton" class="blue-button">在 XVideos 搜索</button>
     </div>
   </div>
 
   <div class="section">
     <h3>播放控制:</h3>
     <div class="control-container">
-      <input type="number" id="seekPosition" placeholder="播放位置(秒)" class="control-input">
+      <input type="number" id="seekPosition" placeholder="播放位置 (秒)" class="control-input">
       <button id="startPlayerButton" class="start-button">启动</button>
       <button id="seekButton" class="seek-button">跳转</button>
       <button id="stopPlayerButton" class="stop-button">停止</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>监听器管理:</h3>
+    <button id="addListenerButton" class="blue-button">新增监听器</button>
+
+    <div id="listenerFormContainer" style="display: none; margin-top: 15px;">
+      <div class="form-group">
+        <label for="listenerUrl">URL 匹配规则 (正则表达式):</label>
+        <input type="text" id="listenerUrl" placeholder="例如：pornhub.com/view_video">
+      </div>
+      <div class="form-group">
+        <label for="listenerTitleSelector">标题选择器:</label>
+        <input type="text" id="listenerTitleSelector" placeholder="例如：.title-container h1">
+      </div>
+      <div class="form-group">
+        <label for="listenerVideoSelector">视频选择器:</label>
+        <input type="text" id="listenerVideoSelector" placeholder="例如：video.mgp_videoElement">
+      </div>
+      <div class="inline-container">
+        <button id="saveListenerButton" class="green-button">保存监听器</button>
+        <button id="cancelListenerButton" class="red-button">取消</button>
+      </div>
+    </div>
+
+    <div style="margin-top: 15px;">
+      <h4>已配置的监听器:</h4>
+      <table id="listenerTable" class="funscript-table">
+        <thead>
+          <tr class="funscript-table-header-row">
+            <th class="funscript-table-header">URL</th>
+            <th class="funscript-table-header">标题选择器</th>
+            <th class="funscript-table-header">视频选择器</th>
+            <th class="funscript-table-header">动作</th>
+          </tr>
+        </thead>
+        <tbody id="listenerTableBody">
+          <tr>
+            <td colspan="4" class="funscript-table-empty">暂无监听器</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 

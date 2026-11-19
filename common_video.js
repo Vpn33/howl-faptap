@@ -45,7 +45,7 @@ function findVideoElementInIframe(doc, selector) {
 }
 
 // 获取视频标题的函数
-function getVideoTitle() {
+function getVideoTitle(titleSelector) {
     // 根据不同网站使用不同的标题选择器
     const isPixeldrainPage = (window.location.hostname.includes('pixeldrain.com') && window.location.pathname.includes('/u'));
     const isRule34videoPage = (window.location.hostname.includes('rule34video.com') && window.location.pathname.includes('/video'));
@@ -68,6 +68,8 @@ function getVideoTitle() {
         titleElement = document.querySelector('.div.truncate a');
     } else if (isXhamsterPage) {
         titleElement = document.querySelector('[data-role="video-title"] h1');
+    } else if (titleSelector) {
+        titleElement = document.querySelector(titleSelector);
     } else {
         // 尝试一些通用的标题选择器
         titleElement = document.querySelector('h1') || 
@@ -84,7 +86,7 @@ function getVideoTitle() {
 }
 
 // 设置视频事件监听器
-function setupVideoEventListeners(videlSelector) {
+function setupVideoEventListeners(videlSelector, titleSelector) {
     let isActive = false;
     let lastPosition = 0;
     let syncTimeout = null;
@@ -292,7 +294,7 @@ function setupVideoEventListeners(videlSelector) {
                 console.log('Howl-faptap: 视频URL:', videoUrl);
                 
                 // 获取视频标题作为文件名
-                const videoTitle = getVideoTitle();
+                const videoTitle = getVideoTitle(titleSelector);
                 
                 // 获取视频格式（从URL中提取）
                 const videoFormat = videoUrl.split('.').pop().split('?')[0].slice(0, 4);
