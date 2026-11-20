@@ -251,7 +251,7 @@ function loadCachedFunscript() {
         row.appendChild(titleCell);
 
 
- 
+
 
 
         // 动作数量列
@@ -795,7 +795,6 @@ function exportListenersToJSON() {
 function importListenersFromJSON(file) {
   chrome.storage.local.get(['listeners'], (result) => {
     const currentListeners = result.listeners || [];
-
     if (!file) {
       showStatus('请选择 JSON 文件', true);
       return;
@@ -803,7 +802,7 @@ function importListenersFromJSON(file) {
 
     const reader = new FileReader();
 
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       try {
         const jsonData = JSON.parse(e.target.result);
 
@@ -826,6 +825,8 @@ function importListenersFromJSON(file) {
             if (confirmOverwrite) {
               // 使用导入的数据覆盖原有数据
               mergedListeners.push(listener);
+            } else {
+              return false;
             }
           }
         }
@@ -842,7 +843,7 @@ function importListenersFromJSON(file) {
       }
     };
 
-    reader.onerror = function() {
+    reader.onerror = function () {
       showStatus('读取文件失败', true);
     };
 
@@ -998,7 +999,7 @@ function renderListenerTable(listeners) {
 // 在 DOMContentLoaded 中添加缓存清理逻辑
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Howl-faptap: DOMContentLoaded 触发');
-  
+
   // 首先清理可能存在的无效缓存
   try {
     const cachedConfig = localStorage.getItem('howl_faptap_config');
@@ -1103,38 +1104,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const cancelListenerButton = document.getElementById('cancelListenerButton');
   const exportJsonButton = document.getElementById('exportJsonButton');
   const importJsonButton = document.getElementById('importJsonButton');
-  const importJsonFile = document.getElementById('importJsonFile');
 
   if (addListenerButton) {
     addListenerButton.addEventListener('click', toggleListenerForm);
   }
-  
+
   if (saveListenerButton) {
     saveListenerButton.addEventListener('click', saveListener);
   }
-  
+
   if (cancelListenerButton) {
     cancelListenerButton.addEventListener('click', toggleListenerForm);
   }
-  
+
   if (exportJsonButton) {
     exportJsonButton.addEventListener('click', exportListenersToJSON);
   }
-  
+
   if (importJsonButton) {
-    importJsonButton.addEventListener('click', () => {
-      importJsonFile.click();
-    });
-  }
-  
-  if (importJsonFile) {
-    importJsonFile.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        importListenersFromJSON(file);
-        // 清空 input，允许重复导入同一文件
-        importJsonFile.value = '';
-      }
+    importJsonButton.addEventListener('click', async () => {
+      // popup.js
+        try {
+          const [handle] = await window.showOpenFilePicker({
+            types: [{ description: '文件', accept: { 'application/json': ['.json'] } }]
+          });
+          const importJsonFile = await handle.getFile();
+          if (importJsonFile) {
+            importListenersFromJSON(importJsonFile);
+          }
+          // 处理文件...
+        } catch (err) {
+          if (err.name !== 'AbortError') console.error(err);
+        }
+
     });
   }
 
